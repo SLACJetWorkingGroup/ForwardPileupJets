@@ -13,7 +13,7 @@
 void runForwardPU_Zmumu(TString mode       = "local",         // local, lite, or cluster
 TString identifier = "ForwardPileupJets",                      // tag 
 //TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON.jetmet2012",
-TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON_short.jetmet2012",
+TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON_short.forward",
 
 //TString dataset = "MuonsSMWZPeriodAB_short.jetmet2012",
 //TString dataset = "MuonsSMWZPeriodAB_short2.jetmet2012",
@@ -36,7 +36,7 @@ TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON_short.jetmet2012",
 TString username   = "mnks",                               // username (e.g. swiatlow, fizisist)
 bool mcweights     = true,                                 // use mc weights?
 bool debug         = false,                                // debug mode
-Long64_t nentries  = 10                              // nevents
+Long64_t nentries  = 500                              // nevents
     ) 
 { 
     
@@ -204,11 +204,12 @@ Long64_t nentries  = 10                              // nevents
 
 
     
-    WriteGRLObject("data12_8TeV.periodAB_HEAD_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
-    WriteZllPRWO(options, "PeriodAB_lumi");
+    WriteJetCalibrationObjects(options);
     WriteMuonUtilities(options);
     WriteBTagCalibObject(options,"MV1","0_7892");
-    WriteJetCalibrationObjects(options);
+    WriteGRLObject("data12_8TeV.periodAB_HEAD_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
+    WriteZllPRWO(options, "PeriodAB_lumi");
+
 
     ///----------------------------------------------------------------
     /// ProofAna global Config object

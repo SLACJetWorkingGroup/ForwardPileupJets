@@ -14,14 +14,14 @@
 #ifndef Analysis_ForwardPileupJets_h
 #define Analysis_ForwardPileupJets_h
 
-#include "Analysis_JetMET_Base.h"
+#include "Analysis_ForwardPileupJets_Base.h"
  
 using std::cout;
 using std::endl;
 
 
 
-class Analysis_ForwardPileupJets : public Analysis_JetMET_Base {
+class Analysis_ForwardPileupJets : public Analysis_ForwardPileupJets_Base {
 
  public :
   

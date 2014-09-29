@@ -30,7 +30,7 @@
  {
   if (Debug()) cout << "Analysis_ForwardPileupJets: DEBUG In WorkerBegin()" << endl;
 
-  Analysis_JetMET_Base::WorkerBegin();
+  Analysis_ForwardPileupJets_Base::WorkerBegin();
   fDoLeptonSelection = false;
   ChainCfg()->Get("doLeptonSelection",  fDoLeptonSelection);
 
