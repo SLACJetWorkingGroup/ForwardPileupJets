@@ -132,6 +132,10 @@ void Analysis_PUJetsTreeFiller::AddBranches(TTree *tree){
     tree->Branch("Jm",                        &fTJM,                     "Jm/F");
     tree->Branch("Jwidth",                    &fTJWidth,                 "Jwidth/F");
     tree->Branch("delRsqr",                   &fTdelRsqr,                "delRsqr/F");
+    tree->Branch("ClusSumPt",                 &fTClusSumPt,              "ClusSumPt/F");
+    tree->Branch("delRStdDev",                &fTdelRStdDev,             "delRStdDev/F");
+    tree->Branch("delRSkewness",              &fTdelRSkewness,           "delRSkewness/F");
+    tree->Branch("delRKurtosis",              &fTdelRKurtosis,           "delRKurtosis/F");
     tree->Branch("delR_01",                   &fTdelR_01,                "delR_01/F");
     tree->Branch("delR_12",                   &fTdelR_12,                "delR_12/F");
     tree->Branch("delR_23",                   &fTdelR_23,                "delR_23/F");
@@ -161,6 +165,7 @@ void Analysis_PUJetsTreeFiller::AddBranches(TTree *tree){
     tree->Branch("delTheta",                  &fTdelTheta,               "delTheta[NClus]/F");
     tree->Branch("delPhi",                    &fTdelPhi,                 "delPhi[NClus]/F");
     tree->Branch("centmag",                   &fTcentmag,                "centmag[NClus]/F");
+    tree->Branch("ClusTime",                  &fTClusTime,               "ClusTime[NClus]/F");
 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::AddBranches End" << endl;
     return;
@@ -186,6 +191,10 @@ void Analysis_PUJetsTreeFiller::ResetBranches(TTree *tree){
     fTJM               = -999.99;
     fTJWidth           = -999.99;
     fTdelRsqr          = -999.99;
+    fTClusSumPt        = -999.99;
+    fTdelRStdDev       = -999.99;
+    fTdelRSkewness     = -999.99;
+    fTdelRKurtosis     = -999.99;
     fTdelR_01          = -999.99;
     fTdelR_12          = -999.99;
     fTdelR_23          = -999.99;
@@ -216,6 +225,7 @@ void Analysis_PUJetsTreeFiller::ResetBranches(TTree *tree){
  	fTdelTheta[iC]   = -999.99;
         fTdelPhi[iC]     = -999.99;
         fTcentmag[iC]    = -999.99;
+        fTClusTime[iC]       = -999.99;
     }
 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::ResetBranches End" << endl;
@@ -242,6 +252,10 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
     fTJM          = myjet->p.M();
     fTJWidth      = myjet->Float("WIDTH");
     fTdelRsqr     = myjet->Float("delRsqr");
+    fTClusSumPt   = myjet->Float("ClusSumPt");
+    fTdelRStdDev  = myjet->Float("delRStdDev");
+    fTdelRSkewness = myjet->Float("delRSkewness");
+    fTdelRKurtosis = myjet->Float("delRKurtosis"); 
     fTdelR_01     = myjet->Float("delR_01");
     fTdelR_12     = myjet->Float("delR_12");
     fTdelR_23     = myjet->Float("delR_23");
@@ -257,13 +271,14 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
     fTNumTowers     = myjet->Float("NumTowers");   
     fTTiming     = myjet->Float("Timing");
 
-    for(int iC=0; iC<myjet->Objs("clusterspt10Ghost"); ++iC){
-	Particle *con = (Particle*) myjet->Obj("clusterspt10Ghost",iC);
+    for(int iC=0; iC<myjet->Objs("constituents"); ++iC){
+	Particle *con = (Particle*) myjet->Obj("constituents",iC);
 	if(fTNClus == MaxNCluster) continue;
 	fTClusPt[iC] = con->p.Pt();
         fTClusEta[iC] = con->p.Eta();
         fTClusPhi[iC] = con->p.Phi();
-        if(fTClusPt[iC]>10){
+        fTClusTime[iC] = con->Float("time");
+        //if(fTClusPt[iC]>10){
           fTcentlam[iC] = con->Float("centerlambda");
           fTEdens[iC] = con->Float("firstEdens");
 	  fTcellmaxfrac[iC] = con->Float("cellmaxfrac");
@@ -277,7 +292,7 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
 	  fTdelTheta[iC] = con->Float("deltaTheta");
 	  fTdelPhi[iC] = con->Float("deltaPhi");
 	  fTcentmag[iC] = con->Float("centermag");
-	}
+	//}
         fTNClus++;
     }
    

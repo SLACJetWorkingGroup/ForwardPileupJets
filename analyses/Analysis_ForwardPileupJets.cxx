@@ -56,15 +56,15 @@ bool Analysis_ForwardPileupJets::ProcessEvent()
   //Event Weighting
   //
   if      (Exists("PeriodAB_lumi")){
-    cout << "PeriodAB exists!" << endl;
+    //cout << "PeriodAB exists!" << endl;
     Set("PUWeight", Float("PeriodAB_lumi"));
   }
   else if (Exists("Full_lumi")    ) Set("PUWeight", Float("Full_lumi"));
   else                              Set("PUWeight", 0);
   Set("EventWeight", (DefaultWeight() *  Float("PUWeight")));
  
-  AddGhostMatch("AntiKt4LCTopo", "clusterspt10", "clustersLCTopo",fastjet::antikt_algorithm, 0.4); 
-  AddGhostMatch("AntiKt4LCTopo", "clustersLCTopo", "clustersLCTopo",fastjet::antikt_algorithm, 0.4); 
+  //AddGhostMatch("AntiKt4LCTopo", "clusterspt10", "clustersLCTopo",fastjet::antikt_algorithm, 0.4); 
+  //AddGhostMatch("AntiKt4LCTopo", "clustersLCTopo", "clustersLCTopo",fastjet::antikt_algorithm, 0.4); 
   
   // Jet Collections: remove overlap between muons and jets 
   //                  this makes a vector of jets with name jetsAntiKt4LCTopoGood
@@ -149,8 +149,8 @@ void Analysis_ForwardPileupJets::MakeJetPlots(const MomKey JetKey1, const MomKey
     double sumPt2 = 0;
     double sumPt3 = 0;
     double sumPt4 = 0;
-    for(int iC = 0; iC < jet(iJet, JetKey1).Objs("clustersLCTopoGhost"); ++iC){
-      Particle *constituent = (Particle*) jet(iJet, JetKey1).Obj("clustersLCTopoGhost", iC);
+    for(int iC = 0; iC < jet(iJet, JetKey1).Objs("constituents"); ++iC){
+      Particle *constituent = (Particle*) jet(iJet, JetKey1).Obj("constituents", iC);
       delRClust = jet(iJet, JetKey1).p.DeltaR(constituent->p);
       sumNum = sumNum + pow(delRClust*constituent->p.Pt(), 2);
       sumDenom = sumDenom + pow(constituent->p.Pt(), 2);
@@ -169,7 +169,7 @@ void Analysis_ForwardPileupJets::MakeJetPlots(const MomKey JetKey1, const MomKey
       }
     }
 
-    if(jet(iJet, JetKey1).Objs("clustersLCTopoGhost")>0){
+    if(jet(iJet, JetKey1).Objs("constituents")>0){
       Fill(JetKeyS+"_allj_width", jet(iJet, JetKey1).Float("WIDTH"), Weight(), 100, 0., 1.);
       
       Fill(JetKeyS+"_allj_delRsqr", sumNum/sumDenom, Weight(), 100, 0., 0.5);
@@ -184,17 +184,112 @@ void Analysis_ForwardPileupJets::MakeJetPlots(const MomKey JetKey1, const MomKey
       jet(iJet, JetKey1).Set("delR_23", sumPt3/jet(iJet, JetKey1).p.Perp());
       jet(iJet, JetKey1).Set("delR_34", sumPt4/jet(iJet, JetKey1).p.Perp());
 
+      Particle *myjet = &(jet(iJet, JetKey1));
+      jet(iJet, JetKey1).Set("ClusSumPt", GetConstitSumPt(myjet));
+      jet(iJet, JetKey1).Set("delRStdDev", GetConstitPtWeightedStdDevOverDr(myjet));
+      jet(iJet, JetKey1).Set("delRSkewness", GetConstitPtWeightedSkewnessOverDr(myjet));
+      jet(iJet, JetKey1).Set("delRKurtosis", GetConstitPtWeightedKurtosisOverDr(myjet));
+
     }
-    if(jet(iJet, JetKey1).Objs("clustersLCTopoGhost")<=0){
+    if(jet(iJet, JetKey1).Objs("constituents")<=0){
       jet(iJet, JetKey1).Set("delRsqr", -1.);
       jet(iJet, JetKey1).Set("delR_01", -1.);
       jet(iJet, JetKey1).Set("delR_12", -1.);
       jet(iJet, JetKey1).Set("delR_23", -1.);
       jet(iJet, JetKey1).Set("delR_34", -1.);
+      jet(iJet, JetKey1).Set("ClusSumPt", -1.);
+      jet(iJet, JetKey1).Set("delRStdDev", -1.);
+      jet(iJet, JetKey1).Set("delRSkewness", -1.);
+      jet(iJet, JetKey1).Set("delRKurtosis", -1.);
     }
 
   }
     
+}
+
+float Analysis_ForwardPileupJets::GetConstitSumPt(Particle *myjet){
+  // calculates the scalar sum of constituent pt
+
+  if(! myjet->Exists("constituents") ) return -999;
+
+  float sumPt=0;
+  for(int iC = 0; iC < myjet->Objs("constituents"); ++iC){
+    Particle *constituent = (Particle*) myjet->Obj("constituents", iC);
+    sumPt += constituent->p.Pt();
+  }
+  return sumPt;
+}
+
+float Analysis_ForwardPileupJets::GetConstitPtWeightedMeanOverDr(Particle *myjet){
+  // calculates pt weighted average dr: jet width
+
+  if(! myjet->Exists("constituents") ) return -999;
+  float drsum=0;
+  float sumweight=0;
+  for(int iC = 0; iC < myjet->Objs("constituents"); ++iC){
+    Particle *constituent = (Particle*) myjet->Obj("constituents", iC);
+    float weight = constituent->p.Pt()/GetConstitSumPt(myjet);
+    drsum += weight*constituent->p.DeltaR(myjet->p);
+    sumweight += weight;
+  }
+  return drsum/sumweight;
+}
+
+float Analysis_ForwardPileupJets::GetConstitPtWeightedStdDevOverDr(Particle *myjet){
+  // calculates pt weighted standard deviation of dr
+  // sigma^2 = sum(w_i (dr_i - <dr>)^2) / sum(w_i), w_i = pt_i / sum(pt), <dr> = pt weighted mean (jet width)
+
+  if(! myjet->Exists("constituents") ) return -999;
+
+  float mean = GetConstitPtWeightedMeanOverDr(myjet);
+  float drsum = 0;
+  float sumweight = 0;
+  for(int iC = 0; iC < myjet->Objs("constituents"); ++iC){
+    Particle *constituent = (Particle*) myjet->Obj("constituents", iC);
+    float weight = constituent->p.Pt()/GetConstitSumPt(myjet);
+    drsum += weight*pow(constituent->p.DeltaR(myjet->p)-mean,2);
+    sumweight += weight;
+  }
+  return sqrt(drsum/sumweight);
+}
+
+float Analysis_ForwardPileupJets::GetConstitPtWeightedSkewnessOverDr(Particle *myjet){
+  // calculates pt weighted skewness of dr
+  // gamma = sum(w_i (dr_i - <dr>)^3 / sigma^3) / sum(w_i), w_i = pt_i / sum(pt), <dr> = pt weighted mean (jet width), sigma = std dev
+  
+  if(! myjet->Exists("constituents") ) return -999;
+
+  float mean = GetConstitPtWeightedMeanOverDr(myjet);
+  float sigma = GetConstitPtWeightedStdDevOverDr(myjet);
+  float drsum = 0;
+  float sumweight = 0;
+  for(int iC = 0; iC < myjet->Objs("constituents"); ++iC){
+    Particle *constituent = (Particle*) myjet->Obj("constituents", iC);
+    float weight = constituent->p.Pt()/GetConstitSumPt(myjet);
+    drsum += weight*pow(constituent->p.DeltaR(myjet->p)-mean,3)/pow(sigma,3);
+    sumweight += weight;
+  }
+  return drsum/sumweight;
+}
+
+float Analysis_ForwardPileupJets::GetConstitPtWeightedKurtosisOverDr(Particle *myjet){
+  // calculates pt weighted kurtosis of dr
+  // kappa = sum(w_i (dr_i - <dr>)^4 / sigma^4) / sum(w_i) -3, w_i = pt_i / sum(pt), <dr> = pt weighted mean (jet width), sigma = std dev
+  // "-3" is so that normal distribution has kurtosis = 0
+
+  if(! myjet->Exists("constituents") ) return -999;
+
+  float mean = GetConstitPtWeightedMeanOverDr(myjet);
+  float sigma = GetConstitPtWeightedStdDevOverDr(myjet);
+  float drsum = 0;
+  float sumweight = 0;
+  for(int iC = 0; iC < myjet->Objs("constituents"); ++iC){
+    Particle *constituent = (Particle*) myjet->Obj("constituents", iC);
+    float weight = constituent->p.Pt()/GetConstitSumPt(myjet);
+    drsum += weight*pow(constituent->p.DeltaR(myjet->p)-mean,4)/pow(sigma,4);
+    sumweight += weight;
+  }
+  return drsum/sumweight - 3;
 }
 
 // --------------------------------------------------

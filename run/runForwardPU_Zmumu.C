@@ -10,33 +10,20 @@
 #include <stdio.h>
 #include <time.h>
 
-void runForwardPU_Zmumu(TString mode       = "local",         // local, lite, or cluster
+void runForwardPU_Zmumu(TString mode       = "cluster",         // local, lite, or cluster
 TString identifier = "ForwardPileupJets",                      // tag 
-//TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON.jetmet2012",
-TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON_short.forward",
+TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON.forward",
+//TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON_short.forward",
 
-//TString dataset = "MuonsSMWZPeriodAB_short.jetmet2012",
-//TString dataset = "MuonsSMWZPeriodAB_short2.jetmet2012",
-//TString dataset = "MuonsSMWZPeriodAB.jetmet2012",
-//TString dataset = "MuonsSMWZPeriodCD.jetmet2012",
-//TString dataset = "MuonsSMWZPeriodE1.jetmet2012",
-//TString dataset = "MuonsSMWZPeriodE2.jetmet2012",
-//TString dataset = "MuonsSMWZPeriodE3.jetmet2012",
-//TString dataset = "MuonsSMWZPeriodE4.jetmet2012",
-//TString dataset = "MuonsSMWZPeriodE5.jetmet2012",
-//TString dataset = "MuonsSMWZPeriodE6.jetmet2012",
-//TString dataset = "MuonsSMWZPeriodG1.jetmet2012",
-//TString dataset = "MuonsSMWZPeriodG2.jetmet2012",
-//TString dataset = "MuonsSMWZPeriodG3.jetmet2012",
-//TString dataset = "MuonsSMWZPeriodH.jetmet2012",
-//TString dataset = "MuonsSMWZPeriodI.jetmet2012",
-//TString dataset = "MuonsSMWZPeriodJ.jetmet2012",
-//TString dataset = "MuonsSMWZPeriodL.jetmet2012",
+//TString dataset = "data_muons_all_NTUP_COMMON_short.forward",
+//TString dataset = "data_muons_all_NTUP_COMMON.forward",
+//TString dataset = "data_muons_all_NTUP_COMMON_debug.forward",
+
 
 TString username   = "mnks",                               // username (e.g. swiatlow, fizisist)
 bool mcweights     = true,                                 // use mc weights?
 bool debug         = false,                                // debug mode
-Long64_t nentries  = 500                              // nevents
+Long64_t nentries  = 5000                              // nevents
     ) 
 { 
     
@@ -109,13 +96,12 @@ Long64_t nentries  = 500                              // nevents
     bool doOOTtruthJet4   = false;
     bool doTruthLinks     = false;
     bool doPhotons        = false;
-    bool doElectrons      = false;
     bool doConstitLinks   = true;
     bool doInTimeTruthJet4= true;
     bool doMuons          = true;
     bool doMuonTriggers   = true;
     bool doMuonTriggersMatch = false;
-    bool doElectrons      = true;
+    bool doElectrons      = false;
     bool doMETRefFinal    = true;
     bool doMuSmear        = false;
     bool doLeptonSelection= true;
@@ -132,7 +118,7 @@ Long64_t nentries  = 500                              // nevents
 
     int  counterMax       = -1;
     float LUMI            =1;
-    TString prwTypes      = "PeriodAB_lumi"; 
+    TString prwTypes      = "Full_lumi"; 
 
 
 
@@ -142,7 +128,7 @@ Long64_t nentries  = 500                              // nevents
     ///----------------------------------------------------------------
     
     Config* TopSelection = new Config("TopSelection",configfile);
-    TopSelection->Set("ANALYSIS","TopCommonSelection");
+    TopSelection->Set("ANALYSIS","TopCommonSelectionForward");
     TopSelection->Set("DEBUG",debug);
 
     Config* ForwardPileupJets = new Config("ForwardPileupJets",configfile);
@@ -207,8 +193,8 @@ Long64_t nentries  = 500                              // nevents
     WriteJetCalibrationObjects(options);
     WriteMuonUtilities(options);
     WriteBTagCalibObject(options,"MV1","0_7892");
-    WriteGRLObject("data12_8TeV.periodAB_HEAD_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
-    WriteZllPRWO(options, "PeriodAB_lumi");
+    WriteGRLObject("data12_8TeV.periodAllYear_HEAD_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
+    WriteZllPRWO(options, "Full_lumi");
 
 
     ///----------------------------------------------------------------

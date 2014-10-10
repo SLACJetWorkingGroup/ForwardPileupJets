@@ -54,6 +54,11 @@ class Analysis_ForwardPileupJets : public Analysis_ForwardPileupJets_Base {
   // helper functions to facilitate similar types of plots
   void MakeJetPlots(const MomKey JetKey1, const MomKey JetKey2, const MomKey JetKey3);
 
+  float GetConstitSumPt(Particle *myjet);
+  float GetConstitPtWeightedMeanOverDr(Particle *myjet);
+  float GetConstitPtWeightedStdDevOverDr(Particle *myjet);
+  float GetConstitPtWeightedSkewnessOverDr(Particle *myjet);
+  float GetConstitPtWeightedKurtosisOverDr(Particle *myjet);
 
   private :			  
 

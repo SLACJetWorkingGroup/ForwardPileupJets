@@ -67,6 +67,10 @@ class Analysis_PUJetsTreeFiller : public Analysis_JetMET_Base {
   float fTJM;
   float fTJWidth;
   float fTdelRsqr;
+  float fTClusSumPt;
+  float fTdelRStdDev;
+  float fTdelRSkewness;
+  float fTdelRKurtosis;
   float fTdelR_01;
   float fTdelR_12;
   float fTdelR_23;
@@ -97,6 +101,7 @@ class Analysis_PUJetsTreeFiller : public Analysis_JetMET_Base {
   float fTdelTheta[MaxNCluster];
   float fTdelPhi[MaxNCluster];
   float fTcentmag[MaxNCluster];
+  float fTClusTime[MaxNCluster];
   int   fTNClus;
 
 };

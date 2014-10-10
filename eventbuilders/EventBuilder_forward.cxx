@@ -414,7 +414,7 @@ Bool_t EventBuilder_forward::CopyEvent(AnalysisBase* evt)
   fail = fail && CopyElectrons();
   fail = fail && AddPRWWeights();
   fail = fail && CopyJetTriggers();
-  fail = fail && CopyMET();
+  //fail = fail && CopyMET();
 
   if(evt->Debug()){
     cout << "showing at the end of copies" << endl;
@@ -462,9 +462,9 @@ Bool_t EventBuilder_forward::CopyMET(){
                               GetP<vector<vector<float> > >("jet_AntiKt4LCTopo_MET_wet"),
                               GetP<vector<vector<unsigned int> > >("jet_AntiKt4LCTopo_MET_statusWord"));
      
-     m_util->setMETTerm(METUtil::RefEle, Get<float>("MET_RefEle_et")*cos(Get<float>("MET_RefEle_phi")),Get<float>("MET_RefEle_et")*sin(Get<float>("MET_RefEle_phi")),Get<float>("MET_RefEle_sumet"));
-     m_util->setMETTerm(METUtil::RefTau,Get<float>("MET_RefTau_et")*cos(Get<float>("MET_RefTau_phi")),Get<float>("MET_RefTau_et")*sin(Get<float>("MET_RefTau_phi")),Get<float>("MET_RefTau_sumet"));
-     m_util->setMETTerm(METUtil::SoftTerms, Get<float>("MET_CellOut_Eflow_et")*cos(Get<float>("MET_CellOut_Eflow_phi")),Get<float>("MET_CellOut_Eflow_et")*sin(Get<float>("MET_CellOut_Eflow_phi")),Get<float>("MET_CellOut_Eflow_sumet"));
+     //m_util->setMETTerm(METUtil::RefEle, Get<float>("MET_RefEle_et")*cos(Get<float>("MET_RefEle_phi")),Get<float>("MET_RefEle_et")*sin(Get<float>("MET_RefEle_phi")),Get<float>("MET_RefEle_sumet"));
+     //m_util->setMETTerm(METUtil::RefTau,Get<float>("MET_RefTau_et")*cos(Get<float>("MET_RefTau_phi")),Get<float>("MET_RefTau_et")*sin(Get<float>("MET_RefTau_phi")),Get<float>("MET_RefTau_sumet"));
+     //m_util->setMETTerm(METUtil::SoftTerms, Get<float>("MET_CellOut_Eflow_et")*cos(Get<float>("MET_CellOut_Eflow_phi")),Get<float>("MET_CellOut_Eflow_et")*sin(Get<float>("MET_CellOut_Eflow_phi")),Get<float>("MET_CellOut_Eflow_sumet"));
      m_util->setElectronParameters(GetP<vector<float> >("el_pt"),GetP<vector<float> >("el_eta"),GetP<vector<float> >("el_phi"),GetP<vector<vector<float> > >("el_MET_wet"),GetP<vector<vector<float> > >("el_MET_wpx"),GetP<vector<vector<float> > >("el_MET_wpy"),GetP<vector<vector<unsigned int> > >("el_MET_statusWord"));
      m_util->setMuonParameters(GetP<vector<float> >("mu_pt"),GetP<vector<float> >("mu_eta"),GetP<vector<float> >("mu_phi"),GetP<vector<vector<float> > >("mu_MET_wet"),GetP<vector<vector<float> > >("mu_MET_wpx"),GetP<vector<vector<float> > >("mu_MET_wpy"),GetP<vector<vector<unsigned int> > >("mu_MET_statusWord"));
      m_util->setExtraMuonParameters(GetP<vector<float> >("mu_ms_qoverp"),GetP<vector<float> >("mu_ms_theta"),GetP<vector<float> >("mu_ms_phi"),GetP<vector<float> >("mu_charge"));
@@ -730,7 +730,6 @@ Bool_t EventBuilder_forward::AddTruthParentChild()
 Bool_t EventBuilder_forward::CopyClusters(){
   if(doLCCluster){
     static const MomKey clustersKey("clustersLCTopo");
-    static const MomKey clustersKey2("clusterspt10");
 
     static const MomKey mcenterlamda("centerlambda");
     static const MomKey mfirstEdens("firstEdens");
@@ -745,6 +744,7 @@ Bool_t EventBuilder_forward::CopyClusters(){
     static const MomKey mdeltaTheta("deltaTheta");
     static const MomKey mdeltaPhi("deltaPhi");
     static const MomKey mcentermag("centermag");
+    static const MomKey mtime("time");
 
     string namefix;
     if(doSMWZ){
@@ -766,33 +766,16 @@ Bool_t EventBuilder_forward::CopyClusters(){
     static const BranchKey bcl_deltaTheta(namefix+"_deltaTheta");
     static const BranchKey bcl_deltaPhi(namefix+"_deltaPhi");
     static const BranchKey bcl_centermag(namefix+"_centermag");
-    
+    static const BranchKey bcl_time(namefix+"_time");   
+ 
     fEvt->AddVec(clustersKey);
-    fEvt->AddVec(clustersKey2);
-    BranchKey bn, bn2, bpt, bpt2, beta, beta2, bphi, bphi2;
-    if(doSMWZ ){
-      bn2   = BranchKey("clpt10_n");
-      bpt2  = BranchKey("clpt10_pt");
-      beta2 = BranchKey("clpt10_eta");
-      bphi2 = BranchKey("clpt10_phi");
-      bn   = BranchKey("cl_n");
-      bpt  = BranchKey("cl_pt");
-      beta = BranchKey("cl_eta");
-      bphi = BranchKey("cl_phi");
-    } else if (doCOMMON){
-      bn2   = BranchKey("cl_lc_n");
-      bpt2  = BranchKey("cl_lc_pt");
-      beta2 = BranchKey("cl_lc_eta");
-      bphi2 = BranchKey("cl_lc_phi");
+    BranchKey bn, bpt, beta, bphi;
+    if (doCOMMON){
       bn   = BranchKey("cl_lc_n");
       bpt  = BranchKey("cl_lc_pt");
       beta = BranchKey("cl_lc_eta");
       bphi = BranchKey("cl_lc_phi");
     } else  {
-      bn2   = BranchKey("cl_had_n");
-      bpt2  = BranchKey("cl_had_pt");
-      beta2 = BranchKey("cl_had_eta");
-      bphi2 = BranchKey("cl_had_phi");
       bn   = BranchKey("cl_had_n");
       bpt  = BranchKey("cl_had_pt");
       beta = BranchKey("cl_had_eta");
@@ -804,28 +787,21 @@ Bool_t EventBuilder_forward::CopyClusters(){
       float eta = Get<vector<float> >(beta).at(iCl);
       float phi = Get<vector<float> >(bphi).at(iCl);
       cl->p.SetPtEtaPhiE(pt/1000.,eta,phi,pt/1000.*cosh(eta));
+      cl->Set(mtime,         Get<vector<float> >(bcl_time)        .at(iCl));
+      cl->Set(mcenterlamda,  Get<vector<float> >(bcl_centerlambda).at(iCl));
+      cl->Set(mfirstEdens,   Get<vector<float> >(bcl_firstEdens)  .at(iCl));
+      cl->Set(mcellmaxfrac,  Get<vector<float> >(bcl_cellmaxfrac) .at(iCl));
+      cl->Set(mlongitudinal, Get<vector<float> >(bcl_longitudinal).at(iCl));
+      cl->Set(mlateral,      Get<vector<float> >(bcl_lateral)     .at(iCl));
+      cl->Set(msecondlambda, Get<vector<float> >(bcl_secondlambda).at(iCl));
+      cl->Set(msecondR,      Get<vector<float> >(bcl_secondR)     .at(iCl));
+      //cl->Set(misolation,    Get<vector<float> >(bcl_isolation)   .at(iCl));
+      //cl->Set(msignificance, Get<vector<float> >(bcl_significance).at(iCl));
+      //cl->Set(meng_pos,      Get<vector<float> >(bcl_eng_pos)     .at(iCl));
+      cl->Set(mdeltaTheta,   Get<vector<float> >(bcl_deltaTheta)  .at(iCl));
+      cl->Set(mdeltaPhi,     Get<vector<float> >(bcl_deltaPhi)    .at(iCl));
+      cl->Set(mcentermag,    Get<vector<float> >(bcl_centermag)   .at(iCl));
       fEvt->Add(clustersKey,cl);
-    }
-    for(int iCl2 = 0; iCl2 < Get<int>(bn2); iCl2++){
-      Particle* cl = new Particle();
-      float pt = Get<vector<float> >(bpt2).at(iCl2);
-      float eta = Get<vector<float> >(beta2).at(iCl2);
-      float phi = Get<vector<float> >(bphi2).at(iCl2);
-      cl->p.SetPtEtaPhiE(pt/1000.,eta,phi,pt/1000.*cosh(eta));
-      cl->Set(mcenterlamda,  Get<vector<float> >(bcl_centerlambda).at(iCl2));
-      cl->Set(mfirstEdens,   Get<vector<float> >(bcl_firstEdens)  .at(iCl2));
-      cl->Set(mcellmaxfrac,  Get<vector<float> >(bcl_cellmaxfrac) .at(iCl2));
-      cl->Set(mlongitudinal, Get<vector<float> >(bcl_longitudinal).at(iCl2));
-      cl->Set(mlateral,      Get<vector<float> >(bcl_lateral)     .at(iCl2));
-      cl->Set(msecondlambda, Get<vector<float> >(bcl_secondlambda).at(iCl2));
-      cl->Set(msecondR,      Get<vector<float> >(bcl_secondR)     .at(iCl2));
-      //cl->Set(misolation,    Get<vector<float> >(bcl_isolation)   .at(iCl2));
-      //cl->Set(msignificance, Get<vector<float> >(bcl_significance).at(iCl2));
-      //cl->Set(meng_pos,      Get<vector<float> >(bcl_eng_pos)     .at(iCl2));
-      cl->Set(mdeltaTheta,   Get<vector<float> >(bcl_deltaTheta)  .at(iCl2));
-      cl->Set(mdeltaPhi,     Get<vector<float> >(bcl_deltaPhi)    .at(iCl2));
-      cl->Set(mcentermag,    Get<vector<float> >(bcl_centermag)   .at(iCl2));
-      fEvt->Add(clustersKey2,cl);
     }
   }
   if(fEvt->Debug()) cout << "set up clusters" << endl;
@@ -902,7 +878,7 @@ Bool_t EventBuilder_forward::CopyTracks(){
           tr->Set(mc_barcode,        Get<vector<int> > (btrk_mc_barcode)        .at(iTr));
           tr->Set("mc_probability",  Get<vector<float> >("trk_mc_probability")  .at(iTr));
         }
-        if(doCOMMON || doGbbCommon){
+        if((doCOMMON || doGbbCommon )&& fEvt->isMC() ){
           tr->Set("mc_index",      Get<vector<int> >("trk_mc_index")          .at(iTr));
           
           // has to do the association here because "mc_index" will be useless after pT soring
