@@ -2813,6 +2813,9 @@ Bool_t EventBuilder_forward::CopyStandardJet(int JetFlag){
       if(fEvt->Debug()) cout << " before calib was " << pt/1000. << " " << eta  << " " << m/1000. << " after calib is " << jet->p.Pt() << " " << jet->p.Eta() <<  " " << jet->p.M() <<   " without JES is " << p_woJES.Pt() << " " << p_woJES.Eta() <<  " " <<  p_woJES.M() << " mu = " << fEvt->Float(averageIntPerXing) << " vtxs = " << fEvt->vtxs() <<  "rho is " << fEvt->Float("Eventshape_rhoKt4LC")/1000. << endl;
 
       if(fEvt->Debug()) cout << "ax = " << ax << " ay  = " << ay << " az = " << az << " ae = " << ae << "aPT = " << areaVector.Pt() << endl;
+      /// fix Pascal: keep only jets with calib pt > 15 GeV
+      if(jet->p.Pt() <15) continue;
+      /// end fix Pascal
   
       jet_woJES->p = p_woJES;
       jet->AddVec(Jet_woJES);
@@ -2880,7 +2883,7 @@ Bool_t EventBuilder_forward::CopyStandardJet(int JetFlag){
                 MomentObj* myLink = new MomentObj();
                 myLink->Set("JVF", jvtxfFull[iJVF]);
                 myLink->AddVec("vertex");
-                myLink->Add("vertex", &(fEvt->vtx(iJVF)));
+                myLink->Add("vertex", &(fEvt->vtx(iJVF))); // this is it! 
                 jet->Add("JVFLinks", myLink);
           }
       }
@@ -3020,6 +3023,8 @@ Bool_t EventBuilder_forward::CopyStandardJet(int JetFlag){
   calJets.clear();
   if(fEvt->Debug()) cout << endl;
 
+  
+  if(fEvt->Debug()){cout << "end CopyStandardJet" << endl;}
   return kTRUE;
 } // end copy standard jets
 
