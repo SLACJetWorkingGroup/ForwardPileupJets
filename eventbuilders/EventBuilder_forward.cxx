@@ -376,7 +376,7 @@ Bool_t EventBuilder_forward::CopyEvent(AnalysisBase* evt)
   fail = fail && ParseJetStrings();
   fail = fail && CopyTracks();
   fail = fail && CopyVertices();
-  fail = fail && CopyTwoTrackVertices();
+  //fail = fail && CopyTwoTrackVertices();
   fail = fail && CopyClusters();
 
   if(evt->Debug()){
@@ -771,7 +771,7 @@ Bool_t EventBuilder_forward::CopyClusters(){
     fEvt->AddVec(clustersKey);
     BranchKey bn, bpt, beta, bphi;
     if (doCOMMON){
-      bn   = BranchKey("cl_lc_n");
+      bn   = BranchKey("cl_n");
       bpt  = BranchKey("cl_lc_pt");
       beta = BranchKey("cl_lc_eta");
       bphi = BranchKey("cl_lc_phi");

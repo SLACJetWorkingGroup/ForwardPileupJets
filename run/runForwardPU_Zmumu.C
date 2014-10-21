@@ -12,13 +12,12 @@
 
 void runForwardPU_Zmumu(TString mode       = "cluster",         // local, lite, or cluster
 TString identifier = "ForwardPileupJets",                      // tag 
-TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON.forward",
+//TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON.forward",
 //TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON_short.forward",
 
 //TString dataset = "data_muons_all_NTUP_COMMON_short.forward",
-//TString dataset = "data_muons_all_NTUP_COMMON.forward",
-//TString dataset = "data_muons_all_NTUP_COMMON_debug.forward",
-
+TString dataset = "data_muons_all_NTUP_COMMON.forward",
+//TString dataset = "debug_data_muons_all_NTUP_COMMON.forward",
 
 TString username   = "mnks",                               // username (e.g. swiatlow, fizisist)
 bool mcweights     = true,                                 // use mc weights?
@@ -91,7 +90,7 @@ Long64_t nentries  = 5000                              // nevents
     bool doLCJets         = true;
     bool doJet4           = true;
     bool doJet6           = false; 
-    bool doVectorJVFLinks = true;
+    bool doVectorJVFLinks = false;
     bool doTruthJets      = true;
     bool doOOTtruthJet4   = false;
     bool doTruthLinks     = false;
