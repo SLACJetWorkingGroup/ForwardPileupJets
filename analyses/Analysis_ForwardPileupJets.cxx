@@ -48,6 +48,8 @@ bool Analysis_ForwardPileupJets::ProcessEvent()
 
   OutputDir()->cd();
 
+  cout << "Event Number " << Int("EventNumber") << endl;
+
   // Event Selection: don't fill histograms if event selection is false
   //                  Set bool EventSelection for use in other (chained) analyses
   if( EventSelection() )       {Set("EventSelection", true );} 
@@ -239,7 +241,8 @@ float Analysis_ForwardPileupJets::GetConstitPtWeightedStdDevOverDr(Particle *myj
   // calculates pt weighted standard deviation of dr
   // sigma^2 = sum(w_i (dr_i - <dr>)^2) / sum(w_i), w_i = pt_i / sum(pt), <dr> = pt weighted mean (jet width)
 
-  if(! myjet->Exists("constituents") ) return -999;
+  if(! myjet->Exists("constituents")   ) return -999;
+  if(  myjet->Objs("constituents") ==1 ) return 0; // code below typically return 10^{-10} or something like that rather the 0 for only one cluster
 
   float mean = GetConstitPtWeightedMeanOverDr(myjet);
   float drsum = 0;
@@ -257,7 +260,8 @@ float Analysis_ForwardPileupJets::GetConstitPtWeightedSkewnessOverDr(Particle *m
   // calculates pt weighted skewness of dr
   // gamma = sum(w_i (dr_i - <dr>)^3 / sigma^3) / sum(w_i), w_i = pt_i / sum(pt), <dr> = pt weighted mean (jet width), sigma = std dev
   
-  if(! myjet->Exists("constituents") ) return -999;
+  if(!  myjet->Exists("constituents")         ) return -999;
+  if(   myjet->Objs("constituents") ==1       ) return -10; // only one constit would give Inf as result. 
 
   float mean = GetConstitPtWeightedMeanOverDr(myjet);
   float sigma = GetConstitPtWeightedStdDevOverDr(myjet);
@@ -277,7 +281,8 @@ float Analysis_ForwardPileupJets::GetConstitPtWeightedKurtosisOverDr(Particle *m
   // kappa = sum(w_i (dr_i - <dr>)^4 / sigma^4) / sum(w_i) -3, w_i = pt_i / sum(pt), <dr> = pt weighted mean (jet width), sigma = std dev
   // "-3" is so that normal distribution has kurtosis = 0
 
-  if(! myjet->Exists("constituents") ) return -999;
+  if(! myjet->Exists("constituents")          ) return -999;
+  if(   myjet->Objs("constituents") ==1       ) return -10; // only one constit would give Inf as result. 
 
   float mean = GetConstitPtWeightedMeanOverDr(myjet);
   float sigma = GetConstitPtWeightedStdDevOverDr(myjet);
