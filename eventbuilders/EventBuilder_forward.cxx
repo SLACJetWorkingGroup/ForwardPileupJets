@@ -769,19 +769,28 @@ Bool_t EventBuilder_forward::CopyClusters(){
     static const BranchKey bcl_time(namefix+"_time");   
  
     fEvt->AddVec(clustersKey);
-    BranchKey bn, bpt, beta, bphi;
+    BranchKey bn, bn_lc, bn_em, bpt, beta, bphi;
     if (doCOMMON){
       bn   = BranchKey("cl_n");
+      bn_lc   = BranchKey("cl_lc_n");
+      bn_em   = BranchKey("cl_em_n");
       bpt  = BranchKey("cl_lc_pt");
       beta = BranchKey("cl_lc_eta");
       bphi = BranchKey("cl_lc_phi");
-    } else  {
+    } 
+    else  {
       bn   = BranchKey("cl_had_n");
+      bn_lc= BranchKey("cl_had_n");
+      bn_em= BranchKey("cl_had_n");
       bpt  = BranchKey("cl_had_pt");
       beta = BranchKey("cl_had_eta");
       bphi = BranchKey("cl_had_phi");
     }
-    for(int iCl = 0; iCl < Get<int>(bn); iCl++){
+    int nclus   = Get<int>(bn);
+    int nclus_lc= Get<int>(bn_lc);
+    int nclus_em= Get<int>(bn_em);
+    int nclus_min = min(nclus, min(nclus_lc, nclus_em)); 
+    for(int iCl = 0; iCl < nclus_min; iCl++){
       Particle* cl = new Particle();
       float pt = Get<vector<float> >(bpt).at(iCl);
       float eta = Get<vector<float> >(beta).at(iCl);

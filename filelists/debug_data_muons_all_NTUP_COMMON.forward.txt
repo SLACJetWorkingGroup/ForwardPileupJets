@@ -1,0 +1,2 @@
+root://atlprf01.slac.stanford.edu:1094//atlas/dq2/user/mswiatlo/data12_8TeV//user.mswiatlo.data12_8TeV.periodD.physics_Muons.PhysCont.NTUP_COMMON.grp14_v01_p1278_p1562.skim.0.10072014.140717024435/user.mswiatlo.003058._03959.data12_8TeV.periodD.physics_Muons.PhysCont.NTUP_COMMON.grp14_v01_p1278_p1562.skim.0.10072014.root
+
