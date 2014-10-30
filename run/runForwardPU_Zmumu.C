@@ -12,17 +12,14 @@
 
 void runForwardPU_Zmumu(TString mode       = "cluster",         // local, lite, or cluster
 TString identifier = "ForwardPileupJets",                      // tag 
-//TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON.forward",
-//TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON_short.forward",
+//TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON_notsoshort2.forwardnew",
+TString dataset = "data_muons_all_NTUP_COMMON.forwardnew",
+//TString dataset = "data_muons_all_NTUP_COMMON_notsoshort.forwardnew",
 
-//TString dataset = "data_muons_all_NTUP_COMMON_short.forward",
-TString dataset = "data_muons_all_NTUP_COMMON.forward",
-//TString dataset = "debug_data_muons_all_NTUP_COMMON.forward",
-
-TString username   = "mnks",                               // username (e.g. swiatlow, fizisist)
+TString username   = "pnef",                               // username (e.g. swiatlow, fizisist)
 bool mcweights     = true,                                 // use mc weights?
 bool debug         = false,                                // debug mode
-Long64_t nentries  = 5000                              // nevents
+Long64_t nentries  = 5000000                              // nevents
     ) 
 { 
     
@@ -126,6 +123,10 @@ Long64_t nentries  = 5000                              // nevents
     /// set up the actual analyses
     ///----------------------------------------------------------------
     
+    Config* DoNothing= new Config("DoNothing",configfile);
+    DoNothing->Set("ANALYSIS","DoNothing");
+    DoNothing->Set("DEBUG",debug);
+
     Config* TopSelection = new Config("TopSelection",configfile);
     TopSelection->Set("ANALYSIS","TopCommonSelectionForward");
     TopSelection->Set("DEBUG",debug);
@@ -140,6 +141,7 @@ Long64_t nentries  = 5000                              // nevents
     
     Config* chain = new Config("chain",configfile);
     chain->AddVec("ANALYSIS");
+    chain->Add("ANALYSIS",DoNothing);
     chain->Add("ANALYSIS",TopSelection);
     chain->Add("ANALYSIS",ForwardPileupJets);
     chain->Add("ANALYSIS",PUJetsTreeFiller);
