@@ -15,7 +15,6 @@ TString identifier = "ForwardPileupJets",                      // tag
 //TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON_notsoshort2.forwardnew",
 TString dataset = "data_muons_all_NTUP_COMMON.forwardnew",
 //TString dataset = "data_muons_all_NTUP_COMMON_notsoshort.forwardnew",
-
 TString username   = "pnef",                               // username (e.g. swiatlow, fizisist)
 bool mcweights     = true,                                 // use mc weights?
 bool debug         = false,                                // debug mode
