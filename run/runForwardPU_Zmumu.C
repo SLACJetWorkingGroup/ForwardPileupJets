@@ -16,8 +16,10 @@ TString identifier = "ForwardPileupJets",                      // tag
 //TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON_short.forward",
 
 //TString dataset = "data_muons_all_NTUP_COMMON_short.forward",
-TString dataset = "data_muons_all_NTUP_COMMON.forward",
+//TString dataset = "data_muons_all_NTUP_COMMON.forward",
 //TString dataset = "debug_data_muons_all_NTUP_COMMON.forward",
+
+TString dataset = "data_muons_periodAB_NTUP_COMMON.forward",
 
 TString username   = "mnks",                               // username (e.g. swiatlow, fizisist)
 bool mcweights     = true,                                 // use mc weights?
@@ -81,7 +83,7 @@ Long64_t nentries  = 5000                              // nevents
     bool doJetTriggers    = false;
     bool doPRW            = true;
     bool doParentChild    = false;
-    bool doTrack          = true;
+    bool doTrack          = false;
     bool doVertex         = true;
     bool doLCCluster      = true; 
     bool doEMCluster      = true;
@@ -117,7 +119,8 @@ Long64_t nentries  = 5000                              // nevents
 
     int  counterMax       = -1;
     float LUMI            =1;
-    TString prwTypes      = "Full_lumi"; 
+    //TString prwTypes      = "Full_lumi"; 
+    TString prwTypes      = "PeriodAB_lumi"; 
 
 
 
@@ -192,8 +195,10 @@ Long64_t nentries  = 5000                              // nevents
     WriteJetCalibrationObjects(options);
     WriteMuonUtilities(options);
     WriteBTagCalibObject(options,"MV1","0_7892");
-    WriteGRLObject("data12_8TeV.periodAllYear_HEAD_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
-    WriteZllPRWO(options, "Full_lumi");
+    //WriteGRLObject("data12_8TeV.periodAllYear_HEAD_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
+    WriteGRLObject("data12_8TeV.periodAB_HEAD_DQDefects-00-01-00_PHYS_StandardGRL_All_Good.xml");
+    //WriteZllPRWO(options, "Full_lumi");
+    WriteZllPRWO(options, "PeriodAB_lumi");
 
 
     ///----------------------------------------------------------------
