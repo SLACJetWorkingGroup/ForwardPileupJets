@@ -104,6 +104,11 @@ class Analysis_PUJetsTreeFiller : public Analysis_JetMET_Base {
   float fTClusTime[MaxNCluster];
   int   fTNClus;
 
+
+    int fTNCaloTowers     ;
+    float fTCaloTowersSumPt;
+    float fTCaloTowersWidth;
+
 };
 
 #endif

@@ -184,6 +184,7 @@ Bool_t EventBuilder_forwardnew::CopyEvent(AnalysisBase* evt)
   doTrkJetBTag              = false;
   doLeptonTruth             = false;
   doITKFixes                = false;
+  doTowers                  = false;
   
   muRef                     = 0.;
   npvRef                    = 0.;
@@ -229,6 +230,7 @@ Bool_t EventBuilder_forwardnew::CopyEvent(AnalysisBase* evt)
   evt->Cfg()->Get("DOMUSMEAR",            doMuSmear);
   evt->Cfg()->Get("DOMCGRL",              doMCGRL);
   evt->Cfg()->Get("DOITKFIXES",           doITKFixes);
+  evt->Cfg()->Get("DOTOWERS",             doTowers);
 
   //cout << "whichsyste is " << whichsyste << endl;
 
@@ -400,6 +402,7 @@ Bool_t EventBuilder_forwardnew::CopyEvent(AnalysisBase* evt)
   fail = fail && CopyElectrons();
   fail = fail && AddPRWWeights();
   fail = fail && CopyJetTriggers();
+  fail = fail && CopyTowers();
 //  fail = fail && CopyMET();
 
   if(evt->Debug()){
@@ -753,77 +756,66 @@ Bool_t EventBuilder_forwardnew::CopyClusters(){
   return kTRUE;
 }
 
-// 
-// Bool_t EventBuilder_forwardnew::CopyClusters(){
-//   if(doLCCluster){
-//     static const MomKey clustersKey("clustersLCTopo");
-//     fEvt->AddVec(clustersKey);
-//     BranchKey bn, bpt, beta, bphi;
-//     if(doSMWZ ){
-//       bn   = BranchKey("cl_n");
-//       bpt  = BranchKey("cl_pt");
-//       beta = BranchKey("cl_eta");
-//       bphi = BranchKey("cl_phi");
-//     } else if (doCOMMON){
-//       bn   = BranchKey("cl_lc_n");
-//       bpt  = BranchKey("cl_lc_pt");
-//       beta = BranchKey("cl_lc_eta");
-//       bphi = BranchKey("cl_lc_phi");
-//     } else  {
-//       bn   = BranchKey("cl_had_n");
-//       bpt  = BranchKey("cl_had_pt");
-//       beta = BranchKey("cl_had_eta");
-//       bphi = BranchKey("cl_had_phi");
-//     }
-//     for(int iCl = 0; iCl < Get<int>(bn); iCl++){
-//       Particle* cl = new Particle();
-//       float pt = Get<vector<float> >(bpt).at(iCl);
-//       float eta = Get<vector<float> >(beta).at(iCl);
-//       float phi = Get<vector<float> >(bphi).at(iCl);
-//       cl->p.SetPtEtaPhiE(pt/1000.,eta,phi,pt/1000.*cosh(eta));
-//       if(doCOMMON){
-//         cl->Set("cl_centerlambda", Get<vector<float> >("cl_centerlambda").at(iCl));
-//         cl->Set("cl_firstEdens",   Get<vector<float> >("cl_firstEdens")  .at(iCl));
-//       }
-//       fEvt->Add(clustersKey,cl);
-//     }
-//   }
-//   if(doEMCluster){
-//     static const MomKey clustersKey("clustersEM");
-//     fEvt->AddVec(clustersKey);
-//     BranchKey bn, bpt, beta, bphi;
-//     if(doSMWZ ){
-//       bn   = BranchKey("cl_n");
-//       bpt  = BranchKey("cl_pt");
-//       beta = BranchKey("cl_eta");
-//       bphi = BranchKey("cl_phi");
-//     } else if (doCOMMON){
-//       bn   = BranchKey("cl_em_n");
-//       bpt  = BranchKey("cl_em_pt");
-//       beta = BranchKey("cl_em_eta");
-//       bphi = BranchKey("cl_em_phi");
-//     } else  {
-//       bn   = BranchKey("cl_had_n");
-//       bpt  = BranchKey("cl_had_pt");
-//       beta = BranchKey("cl_had_eta");
-//       bphi = BranchKey("cl_had_phi");
-//     }
-//     for(int iCl = 0; iCl < Get<int>(bn); iCl++){
-//       Particle* cl = new Particle();
-//       float pt = Get<vector<float> >(bpt).at(iCl);
-//       float eta = Get<vector<float> >(beta).at(iCl);
-//       float phi = Get<vector<float> >(bphi).at(iCl);
-//       cl->p.SetPtEtaPhiE(pt/1000.,eta,phi,pt/1000.*cosh(eta));
-//       if(doCOMMON){
-//         cl->Set("cl_centerlambda", Get<vector<float> >("cl_centerlambda").at(iCl));
-//         cl->Set("cl_firstEdens",   Get<vector<float> >("cl_firstEdens")  .at(iCl));
-//       }
-//       fEvt->Add(clustersKey,cl);
-//     }
-//   }
-//   if(fEvt->Debug()) cout << "set up clusters" << endl;
-//   return kTRUE;
-// }
+Bool_t EventBuilder_forwardnew::CopyTowers(){
+  if(fEvt->Debug()) cout << "set up towers" << endl;
+  if(doTowers){
+    static const MomKey calotowersKey("calotowers");
+    static const MomKey topotowersKey("topotowers");
+    fEvt->AddVec(calotowersKey);
+    fEvt->AddVec(topotowersKey);
+
+    // calo towers: simple projections, no noise supression
+    static const BranchKey cato_n  ("calo_n");
+    static const BranchKey cato_pt ("calo_tower_pT");
+    static const BranchKey cato_eta("calo_tower_eta");
+    static const BranchKey cato_phi("calo_tower_phi");
+    static const BranchKey cato_E  ("calo_tower_E");
+
+    // topo towers: only cells in topo clusters, projected in towers, i.e. with noise suppression
+    static const BranchKey toto_n  ("topo_n");
+    static const BranchKey toto_pt ("topo_tower_pT");
+    static const BranchKey toto_eta("topo_tower_eta");
+    static const BranchKey toto_phi("topo_tower_phi");
+    static const BranchKey toto_E  ("topo_tower_E");
+
+    int ncalotowers   = Get<int>(cato_n);
+//    cout << "number of calo towers: " << ncalotowers << endl;
+    for(int iCaT = 0; iCaT < ncalotowers; iCaT++){
+      Particle* T = new Particle();
+      float pt  = Get<vector<float> >(cato_pt) .at(iCaT) / 1000.; // convert MeV to GeV
+      float eta = Get<vector<float> >(cato_eta).at(iCaT);
+      float phi = Get<vector<float> >(cato_phi).at(iCaT);
+      float E   = Get<vector<float> >(cato_E)  .at(iCaT) / 1000.; // convert MeV to GeV
+      if(pt==0) continue; // ignoring towers with 0 pt
+      T->p.SetPtEtaPhiE(pt,eta,phi,E);
+      fEvt->Add(calotowersKey,T);
+//      WARNING: this will convert negative pT towers to pos pT towers, e.g. 
+//               tower with pt = -1, eta=1, phi=1, E=-1 will be converted to pt = 1, eta=1, phi=1, E=-1
+//
+//      cout << "  adding calo tower " << iCaT  << " pt " << T->p.Pt() << " eta " << T->p.Eta()  << " phi " << T->p.Phi()  << " E " << T->p.E()  << " " << T->p.M()   << endl;
+//      cout << "  tower             " << iCaT  << " pt " << pt        << " eta " << eta         << " phi " << phi         << " E " << E << endl;
+    }
+    int ntopotowers   = Get<int>(toto_n);
+//    cout << "number of topo towers: " << ntopotowers << endl;
+    for(int iToT = 0; iToT < ntopotowers; iToT++){
+      Particle* T = new Particle();
+      float pt  = Get<vector<float> >(cato_pt) .at(iToT) / 1000.; // convert MeV to GeV
+      float eta = Get<vector<float> >(cato_eta).at(iToT);
+      float phi = Get<vector<float> >(cato_phi).at(iToT);
+      float E   = Get<vector<float> >(cato_E)  .at(iToT) / 1000.; // convert MeV to GeV
+      if(pt==0) continue; // ignoring towers with 0 pt
+      T->p.SetPtEtaPhiE(pt,eta,phi,E);
+      fEvt->Add(topotowersKey,T);
+//      WARNING: this will convert negative pT towers to pos pT towers, e.g. 
+//               tower with pt = -1, eta=1, phi=1, E=-1 will be converted to pt = 1, eta=1, phi=1, E=-1
+//
+//      cout << "  adding topo tower " << iToT  << " pt " << T->p.Pt() << " eta " << T->p.Eta()  << " phi " << T->p.Phi()  << " E " << T->p.E()  << " " << T->p.M()   << endl;
+//      cout << "  tower             " << iToT  << " pt " << pt        << " eta " << eta         << " phi " << phi         << " E " << E << endl;
+    }
+  }
+  if(fEvt->Debug()) cout << "set up clusters" << endl;
+  return kTRUE;
+}
 
 
 Bool_t EventBuilder_forwardnew::CopyTracks(){

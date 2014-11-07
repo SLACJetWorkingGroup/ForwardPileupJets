@@ -37,12 +37,14 @@ class Analysis_ForwardPileupJets : public Analysis_ForwardPileupJets_Base {
   
   Bool_t  fDetail;
   Bool_t  fDoLeptonSelection;
+  Bool_t  fDoQCDSelection;
   
   virtual bool    ProcessEvent();
   virtual void    WorkerBegin(); 
   virtual void    WorkerTerminate();
   
   
+  void   CalculateTowerJetMoments(MomKey JetKey);
   
   bool   EventSelection();
   bool   MakeJetMassCut(MomKey JetKey);
@@ -54,11 +56,11 @@ class Analysis_ForwardPileupJets : public Analysis_ForwardPileupJets_Base {
   // helper functions to facilitate similar types of plots
   void MakeJetPlots(const MomKey JetKey1, const MomKey JetKey2, const MomKey JetKey3);
 
-  float GetConstitSumPt(Particle *myjet);
-  float GetConstitPtWeightedMeanOverDr(Particle *myjet);
-  float GetConstitPtWeightedStdDevOverDr(Particle *myjet);
-  float GetConstitPtWeightedSkewnessOverDr(Particle *myjet);
-  float GetConstitPtWeightedKurtosisOverDr(Particle *myjet);
+  float GetConstitSumPt(Particle *myjet, const MomKey constType="constituents");
+  float GetConstitPtWeightedMeanOverDr(Particle *myjet, const MomKey constType="constituents");
+  float GetConstitPtWeightedStdDevOverDr(Particle *myjet, const MomKey constType="constituents");
+  float GetConstitPtWeightedSkewnessOverDr(Particle *myjet, const MomKey constType="constituents");
+  float GetConstitPtWeightedKurtosisOverDr(Particle *myjet, const MomKey constType="constituents");
 
   private :			  
 

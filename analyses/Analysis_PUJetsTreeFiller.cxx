@@ -166,6 +166,9 @@ void Analysis_PUJetsTreeFiller::AddBranches(TTree *tree){
     tree->Branch("delPhi",                    &fTdelPhi,                 "delPhi[NClus]/F");
     tree->Branch("centmag",                   &fTcentmag,                "centmag[NClus]/F");
     tree->Branch("ClusTime",                  &fTClusTime,               "ClusTime[NClus]/F");
+    tree->Branch("NCaloTowers",               &fTNCaloTowers,            "NCaloTowers/I");
+    tree->Branch("CaloTowersSumPt",           &fTCaloTowersSumPt,        "CaloTowersSumPt/F");
+    tree->Branch("CaloTowersWidth",           &fTCaloTowersWidth,        "CaloTowersWidth/F");
 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::AddBranches End" << endl;
     return;
@@ -227,6 +230,9 @@ void Analysis_PUJetsTreeFiller::ResetBranches(TTree *tree){
         fTcentmag[iC]    = -999.99;
         fTClusTime[iC]       = -999.99;
     }
+    fTNCaloTowers     = 0;
+    fTCaloTowersWidth = -999;
+    fTCaloTowersSumPt = -999;
 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::ResetBranches End" << endl;
     return;
@@ -295,6 +301,12 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
 	//}
         fTNClus++;
     }
+
+    // Tower Information
+    fTNCaloTowers     = myjet->Int("NCaloTowers");
+    fTCaloTowersSumPt = myjet->Float("CaloTowersSumPt");
+    fTCaloTowersWidth = myjet->Float("CaloTowersWidth");
+
    
 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::FillEventVars End" << endl;
