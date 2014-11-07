@@ -38,6 +38,7 @@ class Analysis_ForwardPileupJets : public Analysis_ForwardPileupJets_Base {
   Bool_t  fDetail;
   Bool_t  fDoLeptonSelection;
   Bool_t  fDoQCDSelection;
+  Bool_t  fDoTowers;
   
   virtual bool    ProcessEvent();
   virtual void    WorkerBegin(); 

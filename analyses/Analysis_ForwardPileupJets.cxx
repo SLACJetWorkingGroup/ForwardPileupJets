@@ -33,8 +33,10 @@
   Analysis_ForwardPileupJets_Base::WorkerBegin();
   fDoLeptonSelection = false;
   fDoQCDSelection    = false;
+  fDoTowers          = false;
   ChainCfg()->Get("doLeptonSelection",  fDoLeptonSelection);
   ChainCfg()->Get("doQCDSelection",     fDoQCDSelection);
+  ChainCfg()->Get("DOTOWERS",           fDoTowers);
 
 
   if (Debug()) cout << "Analysis_ForwardPileupJets: DEBUG Finish WorkerBegin()" << endl;  
@@ -73,7 +75,9 @@ bool Analysis_ForwardPileupJets::ProcessEvent()
 
   // Add Ghost Match of Towers to Jets 
   // WARNING: this is ignoring negative ennergy towers! 
+  if(fDoTowers){
   AddGhostMatch("AntiKt4LCTopo", "calotowers", "clustersLCTopo", fastjet::antikt_algorithm, 0.4); 
+  }
   
   // Jet Collections: remove overlap between muons and jets 
   //                  this makes a vector of jets with name jetsAntiKt4LCTopoGood
@@ -102,7 +106,7 @@ void Analysis_ForwardPileupJets::CalculateTowerJetMoments(const MomKey JetKey){
   for(int iJet = 0; iJet < jets(JetKey); iJet++){   
       Particle *myjet = &(jet(iJet, JetKey));
       // CaloTowers  Info
-      myjet->Set("NCaloTowers",     myjet->Objs("calotowersGhost"));
+      myjet->Set("NCaloTowers",     myjet->Exists("calotowersGhost")?myjet->Objs("calotowersGhost"):-1);
       myjet->Set("CaloTowersSumPt", GetConstitSumPt               (myjet, "calotowersGhost"));
       myjet->Set("CaloTowersWidth", GetConstitPtWeightedMeanOverDr(myjet, "calotowersGhost"));
   }
