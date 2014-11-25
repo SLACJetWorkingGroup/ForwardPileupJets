@@ -48,6 +48,7 @@ class Analysis_PUJetsTreeFiller : public Analysis_JetMET_Base {
   void FillTree(const MomKey JetKey);
   void FillEventVars(TTree *tree, const MomKey JetKey, Particle *myjet);
   void ResetBranches(TTree *tree);
+  void MakeJetDisplay(Particle *myjet, const MomKey consttype);
   
   // per Event variables
   int   fTEventNumber;
@@ -108,6 +109,9 @@ class Analysis_PUJetsTreeFiller : public Analysis_JetMET_Base {
     int fTNCaloTowers     ;
     float fTCaloTowersSumPt;
     float fTCaloTowersWidth;
+    float fTCaloTowersWidthReCalc;
+    float fTTopoTowersWidth;
+    float fTTopoTowersWidthReCalc;
 
 };
 

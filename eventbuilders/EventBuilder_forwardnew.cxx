@@ -799,10 +799,10 @@ Bool_t EventBuilder_forwardnew::CopyTowers(){
 //    cout << "number of topo towers: " << ntopotowers << endl;
     for(int iToT = 0; iToT < ntopotowers; iToT++){
       Particle* T = new Particle();
-      float pt  = Get<vector<float> >(cato_pt) .at(iToT) / 1000.; // convert MeV to GeV
-      float eta = Get<vector<float> >(cato_eta).at(iToT);
-      float phi = Get<vector<float> >(cato_phi).at(iToT);
-      float E   = Get<vector<float> >(cato_E)  .at(iToT) / 1000.; // convert MeV to GeV
+      float pt  = Get<vector<float> >(toto_pt) .at(iToT) / 1000.; // convert MeV to GeV
+      float eta = Get<vector<float> >(toto_eta).at(iToT);
+      float phi = Get<vector<float> >(toto_phi).at(iToT);
+      float E   = Get<vector<float> >(toto_E)  .at(iToT) / 1000.; // convert MeV to GeV
       if(pt==0) continue; // ignoring towers with 0 pt
       T->p.SetPtEtaPhiE(pt,eta,phi,E);
       fEvt->Add(topotowersKey,T);
@@ -2814,7 +2814,7 @@ Bool_t EventBuilder_forwardnew::CopyStandardJet(int JetFlag){
            jet->Add(AssocConstit, &(fEvt->truth(constitIndices[iConstit], MomKey(""))));
            sumpt += fEvt->truth(constitIndices[iConstit], MomKey("")).p.Pt();
          }
-         else { 
+         else if (JetFlag != JET4INTIMETRUTH){ 
            jet->Add(AssocConstit, &(fEvt->cluster(constitIndices[iConstit], MomKey("LCTopo")))); 
            sumpt += fEvt->cluster(constitIndices[iConstit], MomKey("LCTopo")).p.Pt();
          }

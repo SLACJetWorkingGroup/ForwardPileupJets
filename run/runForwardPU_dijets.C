@@ -10,14 +10,14 @@
 #include <stdio.h>
 #include <time.h>
 
-void runForwardPU_dijets(TString mode       = "local",         // local, lite, or cluster
+void runForwardPU_dijets(TString mode       = "cluster",         // local, lite, or cluster
 TString identifier = "ForwardPileupJets",                      // tag 
-//TString dataset = "Pythia8_mc12_8TeV_JZ2W_NTUP_COMMON_Towers.forwardnew",
-TString dataset = "Pythia8_mc12_8TeV_JZ2W_NTUP_COMMON_Towers_short.forwardnew",
+//TString dataset = "Pythia8_mc12_8TeV_JZ2W_NTUP_COMMON_TowersV4_short.forwardnew",
+TString dataset = "Pythia8_mc12_8TeV_JZ2W_NTUP_COMMON_TowersV4.forwardnew",
 TString username   = "pnef",                               // username (e.g. swiatlow, fizisist)
 bool mcweights     = true,                                 // use mc weights?
 bool debug         = false,                                // debug mode
-Long64_t nentries  = 5                              // nevents
+Long64_t nentries  = 500                              // nevents
     ) 
 { 
     
