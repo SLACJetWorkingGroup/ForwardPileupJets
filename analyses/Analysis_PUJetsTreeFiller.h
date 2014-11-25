@@ -58,6 +58,7 @@ class Analysis_PUJetsTreeFiller : public Analysis_JetMET_Base {
   float fTMu;
   int   fTNPVtruth;
   int   fTNPV;
+  float fTZvtx;
 
   // jets ----------------
   int   fTJetIndex;
@@ -84,8 +85,16 @@ class Analysis_PUJetsTreeFiller : public Analysis_JetMET_Base {
   int  fTisQCDPileup4;
   int  fTNumTowers;
   float fTTiming;
+  float fTClusTimeAvg12;
+  float fTClusTimeDif21;
+  float fTClusTimeDif31;
+  float fTClusTimeDif41;
+  float fTClusTime1;
+  float fTClusTime2;
+  float fTClusTimeAdj;
 
   static const int MaxNCluster = 100;
+  int fTClusIndex[MaxNCluster];
   float fTClusPt[MaxNCluster];
   float fTClusEta[MaxNCluster];
   float fTClusPhi[MaxNCluster];
@@ -103,7 +112,12 @@ class Analysis_PUJetsTreeFiller : public Analysis_JetMET_Base {
   float fTdelPhi[MaxNCluster];
   float fTcentmag[MaxNCluster];
   float fTClusTime[MaxNCluster];
+  float fTClusWidth[MaxNCluster];
   int   fTNClus;
+  int   fTIsLeadingClus[MaxNCluster];
+  int   fTIs2LeadingClus[MaxNCluster];
+  int   fTIs3LeadingClus[MaxNCluster];
+  int   fTIs4LeadingClus[MaxNCluster];
 
 
     int fTNCaloTowers     ;
