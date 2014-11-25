@@ -112,6 +112,8 @@ class Analysis_PUJetsTreeFiller : public Analysis_JetMET_Base {
     float fTCaloTowersWidthReCalc;
     float fTTopoTowersWidth;
     float fTTopoTowersWidthReCalc;
+    float fTCaloTowerTau21;
+    float fTCaloTowerTau32;
 
 };
 

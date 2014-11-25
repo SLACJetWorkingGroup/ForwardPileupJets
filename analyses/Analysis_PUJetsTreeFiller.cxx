@@ -211,6 +211,8 @@ void Analysis_PUJetsTreeFiller::AddBranches(TTree *tree){
     tree->Branch("CaloTowersWidthReCalc",     &fTCaloTowersWidthReCalc,  "CaloTowersWidthReCalc/F");
     tree->Branch("TopoTowersWidth",           &fTTopoTowersWidth,        "TopoTowersWidth/F");
     tree->Branch("TopoTowersWidthReCalc",     &fTTopoTowersWidthReCalc,  "TopoTowersWidthReCalc/F");
+    tree->Branch("CaloTowerTau21",            &fTCaloTowerTau21,         "fTCaloTowerTau21/F");
+    tree->Branch("CaloTowerTau32",            &fTCaloTowerTau32,         "fTCaloTowerTau32/F");
 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::AddBranches End" << endl;
     return;
@@ -278,6 +280,8 @@ void Analysis_PUJetsTreeFiller::ResetBranches(TTree *tree){
     fTCaloTowersWidthReCalc = -999;
     fTTopoTowersWidth = -999;
     fTTopoTowersWidthReCalc = -999;
+    fTCaloTowerTau21 = -999;
+    fTCaloTowerTau32 = -999;
 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::ResetBranches End" << endl;
     return;
@@ -354,6 +358,8 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
     fTCaloTowersWidthReCalc = myjet->Float("CaloTowersWidthReCalc");
     fTTopoTowersWidth = myjet->Float("TopoTowersWidth");
     fTTopoTowersWidthReCalc = myjet->Float("TopoTowersWidthReCalc");
+    fTCaloTowerTau21    = myjet->Float("calotowersGhosttau21Min");
+    fTCaloTowerTau32    = myjet->Float("calotowersGhosttau32Min");
 
    
 
