@@ -122,6 +122,7 @@ void Analysis_PUJetsTreeFiller::AddBranches(TTree *tree){
     tree->Branch("Mu" ,                       &fTMu,                     "Mu/F");
     tree->Branch("NPVtruth" ,                 &fTNPVtruth,               "NPVtruth/I");
     tree->Branch("NPV" ,                      &fTNPV,                    "NPV/I");
+    tree->Branch("Zvtx",                      &fTZvtx,                   "Zvtx/F");
   
     // Jet vars --------------------------------------------------------------------------------------
     tree->Branch("JetIndex",                  &fTJetIndex,               "JetIndex/I");
@@ -149,6 +150,13 @@ void Analysis_PUJetsTreeFiller::AddBranches(TTree *tree){
     tree->Branch("Timing",                    &fTTiming,                 "Timing/F");
     tree->Branch("NumTowers",                 &fTNumTowers,              "NumTowers/I");
     tree->Branch("NClus",                     &fTNClus,                  "NClus/I");
+    tree->Branch("ClusTimeAvg12",             &fTClusTimeAvg12,          "fTClusTimeAvg12/F");
+    tree->Branch("ClusTimeDif21",             &fTClusTimeDif21,          "fTClusTimeDif21/F");
+    tree->Branch("ClusTimeDif31",             &fTClusTimeDif31,          "fTClusTimeDif31/F");
+    tree->Branch("ClusTimeDif41",             &fTClusTimeDif41,          "fTClusTimeDif41/F");
+    tree->Branch("ClusTime1",                 &fTClusTime1,              "ClusTime1/F");
+    tree->Branch("ClusTime2",                 &fTClusTime2,              "ClusTime2/F");
+    tree->Branch("ClusTimeAdj",               &fTClusTimeAdj,            "ClusTimeAdj/F");
     tree->Branch("ClusPt",                    &fTClusPt,                 "ClusPt[NClus]/F");
     tree->Branch("ClusEta",                   &fTClusEta,                "ClusEta[NClus]/F");
     tree->Branch("ClusPhi",                   &fTClusPhi,                "ClusPhi[NClus]/F");
@@ -166,6 +174,11 @@ void Analysis_PUJetsTreeFiller::AddBranches(TTree *tree){
     tree->Branch("delPhi",                    &fTdelPhi,                 "delPhi[NClus]/F");
     tree->Branch("centmag",                   &fTcentmag,                "centmag[NClus]/F");
     tree->Branch("ClusTime",                  &fTClusTime,               "ClusTime[NClus]/F");
+    tree->Branch("ClusIndex",                 &fTClusIndex,              "ClusIndex[NClus]/I");
+    tree->Branch("IsLeadingClus",             &fTIsLeadingClus,          "isLeadingClus[NClus]/I");
+    tree->Branch("Is2LeadingClus",            &fTIs2LeadingClus,         "is2LeadingClus[NClus]/I");
+    tree->Branch("Is3LeadingClus",            &fTIs3LeadingClus,         "is3LeadingClus[NClus]/I");
+    tree->Branch("Is4LeadingClus",            &fTIs4LeadingClus,         "is4LeadingClus[NClus]/I");
 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::AddBranches End" << endl;
     return;
@@ -182,6 +195,7 @@ void Analysis_PUJetsTreeFiller::ResetBranches(TTree *tree){
     fTNPVtruth              = -999;
     fTNPV                   = -999;
     fTMu                    = -999;
+    fTZvtx                  = -999.99;
     
     //Jet Info
     fTJetIndex           = -999;
@@ -206,8 +220,15 @@ void Analysis_PUJetsTreeFiller::ResetBranches(TTree *tree){
     fTisQCDPileup3     = -999;
     fTisQCDPileup4     = -999;
     fTNumTowers        = -999;
-    fTTiming          = -999.99;
+    fTTiming           = -999.99;
     fTNClus            = 0;
+    fTClusTimeAvg12    = -999.99;
+    fTClusTimeDif21    = -999.99;
+    fTClusTimeDif31    = -999.99;
+    fTClusTimeDif41    = -999.99;
+    fTClusTime1        = -999.99;
+    fTClusTime2        = -999.99;
+    fTClusTimeAdj      = -999.99;
     for(int iC=0; iC<MaxNCluster; ++iC){
 	fTClusPt[iC]     = -999.99;
         fTClusEta[iC]    = -999.99;
@@ -226,6 +247,11 @@ void Analysis_PUJetsTreeFiller::ResetBranches(TTree *tree){
         fTdelPhi[iC]     = -999.99;
         fTcentmag[iC]    = -999.99;
         fTClusTime[iC]       = -999.99;
+        fTClusIndex[iC]  = -999;
+        fTIsLeadingClus[iC] = -999;
+        fTIs2LeadingClus[iC] = -999;
+        fTIs3LeadingClus[iC] = -999;
+        fTIs4LeadingClus[iC] = -999;
     }
 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::ResetBranches End" << endl;
@@ -244,6 +270,7 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
     fTEventWeight                 = Float("EventWeight");
     fTDefaultWeight               = DefaultWeight();
     fTMu                          = Float("averageIntPerXing");                  
+    fTZvtx                        = vtx(0).x.z();
 
     // Jet Info ----------------------
     fTJPt         = myjet->p.Pt();
@@ -271,10 +298,19 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
     fTNumTowers     = myjet->Float("NumTowers");   
     fTTiming     = myjet->Float("Timing");
 
+    int LeadClusIndex = -999;
+    int Lead2ClusIndex = -999;
+    int Lead3ClusIndex = -999;
+    int Lead4ClusIndex = -999;
+    float LeadClusPt = 0;
+    float Lead2ClusPt = 0;
+    float Lead3ClusPt = 0;
+    float Lead4ClusPt = 0;
     for(int iC=0; iC<myjet->Objs("constituents"); ++iC){
 	Particle *con = (Particle*) myjet->Obj("constituents",iC);
 	if(fTNClus == MaxNCluster) continue;
-	fTClusPt[iC] = con->p.Pt();
+	fTClusIndex[iC] = iC;
+        fTClusPt[iC] = con->p.Pt();
         fTClusEta[iC] = con->p.Eta();
         fTClusPhi[iC] = con->p.Phi();
         fTClusTime[iC] = con->Float("time");
@@ -293,9 +329,73 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
 	  fTdelPhi[iC] = con->Float("deltaPhi");
 	  fTcentmag[iC] = con->Float("centermag");
 	//}
+	  fTIsLeadingClus[iC] = 0;
+
+	if(fTClusPt[iC]>LeadClusPt){
+          LeadClusPt = fTClusPt[iC];
+          LeadClusIndex = iC;
+        }
         fTNClus++;
     }
-   
+
+      for(int iC=0; iC<myjet->Objs("constituents"); ++iC){
+        Particle *con = (Particle*) myjet->Obj("constituents",iC);
+        fTClusPt[iC] = con->p.Pt();
+        fTIs2LeadingClus[iC] = 0;
+        if(iC==LeadClusIndex){continue;}
+        if(fTClusPt[iC]<LeadClusPt && fTClusPt[iC]>Lead2ClusPt){
+          Lead2ClusPt = fTClusPt[iC];
+          Lead2ClusIndex = iC;
+        }
+      }
+      for(int iC=0; iC<myjet->Objs("constituents"); ++iC){
+        Particle *con = (Particle*) myjet->Obj("constituents",iC);
+        fTClusPt[iC] = con->p.Pt();
+        fTIs3LeadingClus[iC] = 0;
+        if(iC==LeadClusIndex || iC==Lead2ClusIndex){continue;}
+        if(fTClusPt[iC]<Lead2ClusPt && fTClusPt[iC]>Lead3ClusPt){
+          Lead3ClusPt = fTClusPt[iC];
+          Lead3ClusIndex = iC;
+        }
+      }
+      for(int iC=0; iC<myjet->Objs("constituents"); ++iC){
+        Particle *con = (Particle*) myjet->Obj("constituents",iC);
+        fTClusPt[iC] = con->p.Pt();
+        fTIs4LeadingClus[iC] = 0;
+        if(iC==LeadClusIndex || iC==Lead2ClusIndex || iC==Lead3ClusIndex){continue;}
+        if(fTClusPt[iC]<Lead3ClusPt && fTClusPt[iC]>Lead4ClusPt){
+          Lead4ClusPt = fTClusPt[iC];
+          Lead4ClusIndex = iC;
+        }
+      }
+    
+   fTIsLeadingClus[LeadClusIndex] = 1;
+   fTIs2LeadingClus[Lead2ClusIndex] = 1;
+   fTIs3LeadingClus[Lead3ClusIndex] = 1;
+   fTIs4LeadingClus[Lead4ClusIndex] = 1;
+
+  if(myjet->Objs("constituents")<2){
+    fTIs2LeadingClus[Lead2ClusIndex] = 0;    
+    fTIs3LeadingClus[Lead3ClusIndex] = 0;
+    fTIs4LeadingClus[Lead4ClusIndex] = 0;
+  }
+  if(myjet->Objs("constituents")<3){
+    fTIs3LeadingClus[Lead3ClusIndex] = 0;
+    fTIs4LeadingClus[Lead4ClusIndex] = 0;
+  }
+  if(myjet->Objs("constituents")<4){
+    fTIs4LeadingClus[Lead4ClusIndex] = 0;
+  }
+  fTClusTimeAvg12 = (fTClusTime[LeadClusIndex]+fTClusTime[Lead2ClusIndex])/2;
+  fTClusTimeDif21 = fTClusTime[Lead2ClusIndex]-fTClusTime[LeadClusIndex];
+  fTClusTimeDif31 = fTClusTime[Lead3ClusIndex]-fTClusTime[LeadClusIndex];
+  fTClusTimeDif41 = fTClusTime[Lead4ClusIndex]-fTClusTime[LeadClusIndex];
+  fTClusTime1 = fTClusTime[LeadClusIndex];
+  fTClusTime2 = fTClusTime[Lead2ClusIndex];
+
+  TFile f("~/nfs/ProofAna20140926/ForwardPileupJets/analyses/TimeCorrection.root");
+  TH2D *TimeMap = (TH2D*)f.Get("TimeMap");
+  fTClusTimeAdj = fTClusTime[LeadClusIndex]-TimeMap->GetBinContent(TimeMap->FindBin(fTZvtx,fTJEta));
 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::FillEventVars End" << endl;
   return;
