@@ -112,6 +112,7 @@ class Analysis_PUJetsTreeFiller : public Analysis_JetMET_Base {
   float fTdelPhi[MaxNCluster];
   float fTcentmag[MaxNCluster];
   float fTClusTime[MaxNCluster];
+  float fTClusWidth[MaxNCluster];
   int   fTNClus;
   int   fTIsLeadingClus[MaxNCluster];
   int   fTIs2LeadingClus[MaxNCluster];
