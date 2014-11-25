@@ -94,6 +94,7 @@ public :
    Bool_t   CopyStandardJet(int JetFlag);
    Bool_t		CopyTracks();
    Bool_t   CopyClusters();
+   Bool_t   CopyTowers();
    Bool_t   CopyMuons();
    Bool_t   CopyElectrons();
    Bool_t   CopyMET();
@@ -165,6 +166,7 @@ public :
    bool doMuSmear;
    bool doMCGRL;
    bool doITKFixes;
+   bool doTowers;
 
    float muRef;
    float npvRef;

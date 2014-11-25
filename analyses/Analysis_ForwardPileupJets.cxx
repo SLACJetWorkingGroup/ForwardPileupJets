@@ -32,7 +32,11 @@
 
   Analysis_ForwardPileupJets_Base::WorkerBegin();
   fDoLeptonSelection = false;
+  fDoQCDSelection    = false;
+  fDoTowers          = false;
   ChainCfg()->Get("doLeptonSelection",  fDoLeptonSelection);
+  ChainCfg()->Get("doQCDSelection",     fDoQCDSelection);
+  ChainCfg()->Get("DOTOWERS",           fDoTowers);
 
 
   if (Debug()) cout << "Analysis_ForwardPileupJets: DEBUG Finish WorkerBegin()" << endl;  
@@ -55,6 +59,7 @@ bool Analysis_ForwardPileupJets::ProcessEvent()
   if( EventSelection() )       {Set("EventSelection", true );} 
   else                         {Set("EventSelection", false); return true;}
  
+  cout << "Channel " << Int("ChannelNumber") << " run " << Int("RunNumber") << endl;
   //Event Weighting
   //
   if      (Exists("PeriodAB_lumi")){
@@ -67,10 +72,19 @@ bool Analysis_ForwardPileupJets::ProcessEvent()
  
   //AddGhostMatch("AntiKt4LCTopo", "clusterspt10", "clustersLCTopo",fastjet::antikt_algorithm, 0.4); 
   //AddGhostMatch("AntiKt4LCTopo", "clustersLCTopo", "clustersLCTopo",fastjet::antikt_algorithm, 0.4); 
+
+  // Add Ghost Match of Towers to Jets 
+  // WARNING: this is ignoring negative ennergy towers! 
+  if(fDoTowers){
+  AddGhostMatch("AntiKt4LCTopo", "calotowers", "clustersLCTopo", fastjet::antikt_algorithm, 0.4); 
+  AddGhostMatch("AntiKt4LCTopo", "topotowers", "clustersLCTopo", fastjet::antikt_algorithm, 0.4); 
+  }
   
   // Jet Collections: remove overlap between muons and jets 
   //                  this makes a vector of jets with name jetsAntiKt4LCTopoGood
   MakeJetCollections("AntiKt4LCTopo");
+
+  // Calculate Jet moments from Towers
 
   if(Debug()) cout << "Making jets and jet Plots!" << endl;
 
@@ -84,8 +98,26 @@ bool Analysis_ForwardPileupJets::ProcessEvent()
   Fill(JetKeyA+"_mu", Float("averageIntPerXing"), Weight(), 100, 0., 100.); 
   MakeJetPlots(JetKey4LC,JetKey4Tru,JetKey4IT);
  
+  // Calculate Nsubjettiness 
+  AddNsub("calotowersGhost", "AntiKt4LCTopoGood", true, 1);
+  
+  CalculateTowerJetMoments("AntiKt4LCTopoGood");
  
   return true;
+}
+
+void Analysis_ForwardPileupJets::CalculateTowerJetMoments(const MomKey JetKey){
+  for(int iJet = 0; iJet < jets(JetKey); iJet++){   
+      Particle *myjet = &(jet(iJet, JetKey));
+      // CaloTowers  Info
+      myjet->Set("NCaloTowers",           myjet->Exists("calotowersGhost")?myjet->Objs("calotowersGhost"):-1);
+      myjet->Set("CaloTowersSumPt",       GetConstitSumPt               (myjet, "calotowersGhost"));
+      myjet->Set("CaloTowersWidth",       GetConstitPtWeightedMeanOverDr(myjet, "calotowersGhost"));
+      myjet->Set("CaloTowersWidthReCalc", GetConstitPtWeightedMeanOverDr(myjet, "calotowersGhost", true));
+      myjet->Set("TopoTowersWidth",       GetConstitPtWeightedMeanOverDr(myjet, "topotowersGhost"));
+      myjet->Set("TopoTowersWidthReCalc", GetConstitPtWeightedMeanOverDr(myjet, "topotowersGhost", true));
+  }
+
 }
 
 void Analysis_ForwardPileupJets::MakeJetPlots(const MomKey JetKey1, const MomKey JetKey2, const MomKey JetKey3){
@@ -209,46 +241,58 @@ void Analysis_ForwardPileupJets::MakeJetPlots(const MomKey JetKey1, const MomKey
     
 }
 
-float Analysis_ForwardPileupJets::GetConstitSumPt(Particle *myjet){
+float Analysis_ForwardPileupJets::GetConstitSumPt(Particle *myjet, const MomKey constType){
   // calculates the scalar sum of constituent pt
 
-  if(! myjet->Exists("constituents") ) return -999;
+  if(! myjet->Exists(constType) ) return -999;
 
   float sumPt=0;
-  for(int iC = 0; iC < myjet->Objs("constituents"); ++iC){
-    Particle *constituent = (Particle*) myjet->Obj("constituents", iC);
+  for(int iC = 0; iC < myjet->Objs(constType); ++iC){
+    Particle *constituent = (Particle*) myjet->Obj(constType, iC);
     sumPt += constituent->p.Pt();
   }
   return sumPt;
 }
 
-float Analysis_ForwardPileupJets::GetConstitPtWeightedMeanOverDr(Particle *myjet){
+float Analysis_ForwardPileupJets::GetConstitPtWeightedMeanOverDr(Particle *myjet, const MomKey constType, const bool recalcAxis){
   // calculates pt weighted average dr: jet width
 
-  if(! myjet->Exists("constituents") ) return -999;
+  if(! myjet->Exists(constType) ) return -999;
+
+  TLorentzVector axis;
+  if(recalcAxis){
+    // 4-vector addition
+    for(int iC = 0; iC < myjet->Objs(constType); ++iC){
+        axis += ((Particle*) myjet->Obj(constType, iC))->p;
+    }
+  }else{
+    // use jet axis
+    axis = myjet->p;
+  }
+
   float drsum=0;
   float sumweight=0;
-  for(int iC = 0; iC < myjet->Objs("constituents"); ++iC){
-    Particle *constituent = (Particle*) myjet->Obj("constituents", iC);
-    float weight = constituent->p.Pt()/GetConstitSumPt(myjet);
-    drsum += weight*constituent->p.DeltaR(myjet->p);
+  for(int iC = 0; iC < myjet->Objs(constType); ++iC){
+    Particle *constituent = (Particle*) myjet->Obj(constType, iC);
+    float weight = constituent->p.Pt()/GetConstitSumPt(myjet, constType);
+    drsum += weight*constituent->p.DeltaR(axis);
     sumweight += weight;
   }
   return drsum/sumweight;
 }
 
-float Analysis_ForwardPileupJets::GetConstitPtWeightedStdDevOverDr(Particle *myjet){
+float Analysis_ForwardPileupJets::GetConstitPtWeightedStdDevOverDr(Particle *myjet, const MomKey constType){
   // calculates pt weighted standard deviation of dr
   // sigma^2 = sum(w_i (dr_i - <dr>)^2) / sum(w_i), w_i = pt_i / sum(pt), <dr> = pt weighted mean (jet width)
 
-  if(! myjet->Exists("constituents")   ) return -999;
-  if(  myjet->Objs("constituents") ==1 ) return 0; // code below typically return 10^{-10} or something like that rather the 0 for only one cluster
+  if(! myjet->Exists(constType)   ) return -999;
+  if(  myjet->Objs(constType) ==1 ) return 0; // code below typically return 10^{-10} or something like that rather the 0 for only one cluster
 
   float mean = GetConstitPtWeightedMeanOverDr(myjet);
   float drsum = 0;
   float sumweight = 0;
-  for(int iC = 0; iC < myjet->Objs("constituents"); ++iC){
-    Particle *constituent = (Particle*) myjet->Obj("constituents", iC);
+  for(int iC = 0; iC < myjet->Objs(constType); ++iC){
+    Particle *constituent = (Particle*) myjet->Obj(constType, iC);
     float weight = constituent->p.Pt()/GetConstitSumPt(myjet);
     drsum += weight*pow(constituent->p.DeltaR(myjet->p)-mean,2);
     sumweight += weight;
@@ -256,19 +300,19 @@ float Analysis_ForwardPileupJets::GetConstitPtWeightedStdDevOverDr(Particle *myj
   return sqrt(drsum/sumweight);
 }
 
-float Analysis_ForwardPileupJets::GetConstitPtWeightedSkewnessOverDr(Particle *myjet){
+float Analysis_ForwardPileupJets::GetConstitPtWeightedSkewnessOverDr(Particle *myjet, const MomKey constType){
   // calculates pt weighted skewness of dr
   // gamma = sum(w_i (dr_i - <dr>)^3 / sigma^3) / sum(w_i), w_i = pt_i / sum(pt), <dr> = pt weighted mean (jet width), sigma = std dev
   
-  if(!  myjet->Exists("constituents")         ) return -999;
-  if(   myjet->Objs("constituents") ==1       ) return -10; // only one constit would give Inf as result. 
+  if(!  myjet->Exists(constType)         ) return -999;
+  if(   myjet->Objs(constType) ==1       ) return -10; // only one constit would give Inf as result. 
 
   float mean = GetConstitPtWeightedMeanOverDr(myjet);
   float sigma = GetConstitPtWeightedStdDevOverDr(myjet);
   float drsum = 0;
   float sumweight = 0;
-  for(int iC = 0; iC < myjet->Objs("constituents"); ++iC){
-    Particle *constituent = (Particle*) myjet->Obj("constituents", iC);
+  for(int iC = 0; iC < myjet->Objs(constType); ++iC){
+    Particle *constituent = (Particle*) myjet->Obj(constType, iC);
     float weight = constituent->p.Pt()/GetConstitSumPt(myjet);
     drsum += weight*pow(constituent->p.DeltaR(myjet->p)-mean,3)/pow(sigma,3);
     sumweight += weight;
@@ -276,20 +320,20 @@ float Analysis_ForwardPileupJets::GetConstitPtWeightedSkewnessOverDr(Particle *m
   return drsum/sumweight;
 }
 
-float Analysis_ForwardPileupJets::GetConstitPtWeightedKurtosisOverDr(Particle *myjet){
+float Analysis_ForwardPileupJets::GetConstitPtWeightedKurtosisOverDr(Particle *myjet, const MomKey constType){
   // calculates pt weighted kurtosis of dr
   // kappa = sum(w_i (dr_i - <dr>)^4 / sigma^4) / sum(w_i) -3, w_i = pt_i / sum(pt), <dr> = pt weighted mean (jet width), sigma = std dev
   // "-3" is so that normal distribution has kurtosis = 0
 
-  if(! myjet->Exists("constituents")          ) return -999;
-  if(   myjet->Objs("constituents") ==1       ) return -10; // only one constit would give Inf as result. 
+  if(! myjet->Exists(constType)          ) return -999;
+  if(   myjet->Objs(constType) ==1       ) return -10; // only one constit would give Inf as result. 
 
   float mean = GetConstitPtWeightedMeanOverDr(myjet);
   float sigma = GetConstitPtWeightedStdDevOverDr(myjet);
   float drsum = 0;
   float sumweight = 0;
-  for(int iC = 0; iC < myjet->Objs("constituents"); ++iC){
-    Particle *constituent = (Particle*) myjet->Obj("constituents", iC);
+  for(int iC = 0; iC < myjet->Objs(constType); ++iC){
+    Particle *constituent = (Particle*) myjet->Obj(constType, iC);
     float weight = constituent->p.Pt()/GetConstitSumPt(myjet);
     drsum += weight*pow(constituent->p.DeltaR(myjet->p)-mean,4)/pow(sigma,4);
     sumweight += weight;
@@ -344,6 +388,13 @@ bool Analysis_ForwardPileupJets::EventSelection(){
       Add("recosZCandidate", Z);
       if( ! ((reco(0, "ZCandidate").p.M() > 71) && 
              (reco(0, "ZCandidate").p.M()  < 111)))           return false;  
+  }
+  if (fDoQCDSelection){
+      if(Debug()) cout << "Analysis_PileUpStudiesBase: doQCDSelection"        << endl;
+      if (! Bool("QCDSelection_All"))                         return false;
+      if (! (jets("AntiKt4LCTopo")>0))                        return false;
+      if (! (jet(0,"AntiKt4LCTopo").p.Pt()>20))               return false;
+      
   }
 
   if(Debug()) cout <<"Analysis_ForwardPileupJets::EventSelection End" << endl;

@@ -10,10 +10,9 @@
 #include <stdio.h>
 #include <time.h>
 
-void runForwardPU_Zmumu(TString mode       = "cluster",         // local, lite, or cluster
+void runForwardPU_Zmumu(TString mode       = "local",         // local, lite, or cluster
 TString identifier = "ForwardPileupJets",                      // tag 
-//TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON_notsoshort2.forwardnew",
-TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON.forwardnew",
+TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON_notsoshort2.forwardnew",
 //TString dataset = "data_muons_all_NTUP_COMMON.forwardnew",
 //TString dataset = "data_muons_all_NTUP_COMMON_notsoshort.forwardnew",
 TString username   = "mnks",                               // username (e.g. swiatlow, fizisist)
@@ -101,6 +100,7 @@ Long64_t nentries  = 5000                              // nevents
     bool doMETRefFinal    = true;
     bool doMuSmear        = false;
     bool doLeptonSelection= true;
+    bool doTowers         = false;
     
     bool doCOMMON         = false;
     if(dataset.Contains("COMMON")){
@@ -186,6 +186,7 @@ Long64_t nentries  = 5000                              // nevents
     chain->Set("DOMETREFFINAL"   , doMETRefFinal   );
     chain->Set("doLeptonSelection" , doLeptonSelection);
     chain->Set("DOSMWZ",           doSMWZ          );  
+    chain->Set("DOTOWERS",          doTowers);  
 
     chain->Write();
 

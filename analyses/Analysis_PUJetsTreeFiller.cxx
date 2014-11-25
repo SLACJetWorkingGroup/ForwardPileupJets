@@ -101,11 +101,50 @@ void Analysis_PUJetsTreeFiller::FillTree(const MomKey JetKey){
       fTJetIndex = iJ;
       FillEventVars(fEventTree, JetKey, myjet);
       fEventTree->Fill();
+//      MakeJetDisplay(myjet, "calotowersGhost");
+//      MakeJetDisplay(myjet, "topotowersGhost");
     }
   
   }  
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::FillTree End" << endl;
   return;
+}
+
+///============================================
+/// Make Event Display
+///============================================
+void Analysis_PUJetsTreeFiller::MakeJetDisplay( Particle *myjet, const MomKey consttype){
+    
+    if(myjet->p.Pt() < 20 || myjet->p.Pt()>30) return;
+//    if(fabs(myjet->p.Eta())<2.4)               return;
+//    if(myjet->Objs("constituents")!=1)         return;
+
+    if(! myjet->Exists(consttype) )    return;
+
+    cout << "MakeJetDisplay new jet: eta"  << myjet->p.Eta() << endl;
+    ostringstream name;
+    name << consttype << Int("EventNumber");
+    float phi = myjet->p.Phi()>0? (round(10*(myjet->p.Phi()-0.01))/10.+0.02) : (round(10*(myjet->p.Phi()+0.01))/10.-0.02);
+    float eta = myjet->p.Eta()>0? (round(10*(myjet->p.Eta()-0.05))/10.+0.05) : (round(10*(myjet->p.Eta()+0.05))/10.-0.05);
+
+    TH2D* tower = new TH2D(name.str().c_str(), "", 11, eta-0.5-0.025, eta+0.5+0.025, 10, phi-0.5-0.025, phi+0.5+0.025);
+    for(int iC = 0; iC < myjet->Objs(consttype); ++iC){
+      Particle *constituent = (Particle*) myjet->Obj(consttype, iC);
+      cout << "tower " << iC << " eta " << constituent->p.Eta() << " phi " << constituent->p.Phi() << endl;
+      int bin = tower->FindBin(constituent->p.Eta(), constituent->p.Phi());
+      tower->SetBinContent(bin, constituent->p.Pt());
+    }
+    ostringstream title; title << "1-cluster jet: ";
+    if      (myjet->Int("isHardScatter")) title << "hard scatter";
+    else if (myjet->Int("isPileup"))      title << "pileup";
+    tower->SetTitle(title.str().c_str());
+    tower->SetXTitle("#eta");
+    tower->SetYTitle("#phi");
+    tower->Write();
+    delete tower;
+
+
+    return;
 }
 
 ///=============================================
@@ -179,6 +218,12 @@ void Analysis_PUJetsTreeFiller::AddBranches(TTree *tree){
     tree->Branch("Is2LeadingClus",            &fTIs2LeadingClus,         "is2LeadingClus[NClus]/I");
     tree->Branch("Is3LeadingClus",            &fTIs3LeadingClus,         "is3LeadingClus[NClus]/I");
     tree->Branch("Is4LeadingClus",            &fTIs4LeadingClus,         "is4LeadingClus[NClus]/I");
+    tree->Branch("NCaloTowers",               &fTNCaloTowers,            "NCaloTowers/I");
+    tree->Branch("CaloTowersSumPt",           &fTCaloTowersSumPt,        "CaloTowersSumPt/F");
+    tree->Branch("CaloTowersWidth",           &fTCaloTowersWidth,        "CaloTowersWidth/F");
+    tree->Branch("CaloTowersWidthReCalc",     &fTCaloTowersWidthReCalc,  "CaloTowersWidthReCalc/F");
+    tree->Branch("TopoTowersWidth",           &fTTopoTowersWidth,        "TopoTowersWidth/F");
+    tree->Branch("TopoTowersWidthReCalc",     &fTTopoTowersWidthReCalc,  "TopoTowersWidthReCalc/F");
 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::AddBranches End" << endl;
     return;
@@ -253,6 +298,12 @@ void Analysis_PUJetsTreeFiller::ResetBranches(TTree *tree){
         fTIs3LeadingClus[iC] = -999;
         fTIs4LeadingClus[iC] = -999;
     }
+    fTNCaloTowers     = 0;
+    fTCaloTowersSumPt = -999;
+    fTCaloTowersWidth = -999;
+    fTCaloTowersWidthReCalc = -999;
+    fTTopoTowersWidth = -999;
+    fTTopoTowersWidthReCalc = -999;
 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::ResetBranches End" << endl;
     return;
@@ -338,6 +389,14 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
         fTNClus++;
     }
 
+    // Tower Information
+    fTNCaloTowers     = myjet->Int("NCaloTowers");
+    fTCaloTowersSumPt = myjet->Float("CaloTowersSumPt");
+    fTCaloTowersWidth = myjet->Float("CaloTowersWidth");
+    fTCaloTowersWidthReCalc = myjet->Float("CaloTowersWidthReCalc");
+    fTTopoTowersWidth = myjet->Float("TopoTowersWidth");
+    fTTopoTowersWidthReCalc = myjet->Float("TopoTowersWidthReCalc");
+
       for(int iC=0; iC<myjet->Objs("constituents"); ++iC){
         Particle *con = (Particle*) myjet->Obj("constituents",iC);
         fTClusPt[iC] = con->p.Pt();
@@ -400,4 +459,5 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::FillEventVars End" << endl;
   return;
 }
+
 
