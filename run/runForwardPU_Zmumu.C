@@ -13,12 +13,13 @@
 void runForwardPU_Zmumu(TString mode       = "cluster",         // local, lite, or cluster
 TString identifier = "ForwardPileupJets",                      // tag 
 //TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON_notsoshort2.forwardnew",
-TString dataset = "data_muons_all_NTUP_COMMON.forwardnew",
+TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON.forwardnew",
+//TString dataset = "data_muons_all_NTUP_COMMON.forwardnew",
 //TString dataset = "data_muons_all_NTUP_COMMON_notsoshort.forwardnew",
-TString username   = "pnef",                               // username (e.g. swiatlow, fizisist)
+TString username   = "mnks",                               // username (e.g. swiatlow, fizisist)
 bool mcweights     = true,                                 // use mc weights?
 bool debug         = false,                                // debug mode
-Long64_t nentries  = 5000000                              // nevents
+Long64_t nentries  = 5000                              // nevents
     ) 
 { 
     
