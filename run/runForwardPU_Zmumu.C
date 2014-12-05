@@ -101,6 +101,7 @@ Long64_t nentries  = 5000                              // nevents
     bool doMuSmear        = false;
     bool doLeptonSelection= true;
     bool doTowers         = false;
+    bool doTiming         = true;
     
     bool doCOMMON         = false;
     if(dataset.Contains("COMMON")){
@@ -187,6 +188,7 @@ Long64_t nentries  = 5000                              // nevents
     chain->Set("doLeptonSelection" , doLeptonSelection);
     chain->Set("DOSMWZ",           doSMWZ          );  
     chain->Set("DOTOWERS",          doTowers);  
+    chain->Set("doTiming",          doTiming);  
 
     chain->Write();
 

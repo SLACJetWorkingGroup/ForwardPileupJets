@@ -40,8 +40,11 @@
 
   Analysis_JetMET_Base::WorkerBegin();
 
+  ChainCfg()->Get("doTiming",     fDoTiming);
+  
 
   // trees -------------------
+  OutputDir()->cd();
   fEventTree = new TTree("EventTree", "Tree with event-by-event variables");
   AddBranches(fEventTree);
 } 
@@ -225,8 +228,12 @@ void Analysis_PUJetsTreeFiller::AddBranches(TTree *tree){
     tree->Branch("CaloTowersWidthReCalc",     &fTCaloTowersWidthReCalc,  "CaloTowersWidthReCalc/F");
     tree->Branch("TopoTowersWidth",           &fTTopoTowersWidth,        "TopoTowersWidth/F");
     tree->Branch("TopoTowersWidthReCalc",     &fTTopoTowersWidthReCalc,  "TopoTowersWidthReCalc/F");
-    tree->Branch("CaloTowerTau21",            &fTCaloTowerTau21,         "fTCaloTowerTau21/F");
-    tree->Branch("CaloTowerTau32",            &fTCaloTowerTau32,         "fTCaloTowerTau32/F");
+    tree->Branch("CaloTowerTau21",            &fTCaloTowerTau21,         "CaloTowerTau21/F");
+    tree->Branch("CaloTowerTau32",            &fTCaloTowerTau32,         "CaloTowerTau32/F");
+    tree->Branch("EMFrac",                    &fTEMfrac,                 "EMfrac/F");
+    tree->Branch("BackToBackRpT",             &fTBackToBackRpT,          "BackToBackRpT/F");
+    tree->Branch("BackToBackDPhi",            &fTBackToBackDPhi,         "BackToBackDPhi/F");
+    tree->Branch("BackToBackPt",              &fTBackToBackPt,           "BackToBackPt/F");
 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::AddBranches End" << endl;
     return;
@@ -311,6 +318,11 @@ void Analysis_PUJetsTreeFiller::ResetBranches(TTree *tree){
     fTCaloTowerTau21 = -999;
     fTCaloTowerTau32 = -999;
 
+    fTEMfrac = -999;
+    fTBackToBackRpT  = -999;
+    fTBackToBackDPhi = -999;
+    fTBackToBackPt   = -999;
+
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::ResetBranches End" << endl;
     return;
 }
@@ -354,6 +366,7 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
     }
     fTNumTowers     = myjet->Float("NumTowers");   
     fTTiming     = myjet->Float("Timing");
+    fTEMfrac = myjet->Float("emfrac");
 
     int LeadClusIndex = -999;
     int Lead2ClusIndex = -999;
@@ -461,9 +474,42 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
   fTClusTime1 = fTClusTime[LeadClusIndex];
   fTClusTime2 = fTClusTime[Lead2ClusIndex];
 
-  TFile f("~/nfs/ProofAna20140926/ForwardPileupJets/analyses/TimeCorrection.root");
-  TH2D *TimeMap = (TH2D*)f.Get("TimeMap");
+  if(fDoTiming){
+  TFile * f = new TFile("/u/at/mnks/nfs/ProofAna20140926/ForwardPileupJets/analyses/TimeCorrection.root", "open");
+  TH2D *TimeMap = (TH2D*)f->Get("TimeMap");
   fTClusTimeAdj = fTClusTime[LeadClusIndex]-TimeMap->GetBinContent(TimeMap->FindBin(fTZvtx,fTJEta));
+  f->Close();
+  delete f;
+  }
+
+
+  // RpT Information
+  myjet->Set("BackToBackJetRpT" , -1.);
+  myjet->Set("BackToBackJetPt"  , -1.);
+  myjet->Set("BackToBackJetDPhi", -1.);
+  float maxdPhi = 0;
+  Particle* backtobackjet =0;
+  for(int iJ=0; iJ<jets(JetKey); ++iJ){
+    Particle *otherjet = &(jet(iJ, JetKey)); 
+    if(myjet == otherjet)                            continue;
+    if(fabs(otherjet -> p.Eta())>2.4)                continue; // only looking at jets within the tracker
+    if(otherjet -> p.Pt()<20)                        continue; // only looking at jets with pT > 30 GeV
+    if(fabs(otherjet->p.DeltaPhi(myjet->p))<maxdPhi) continue; // keep track of jet that is most back to back
+
+    maxdPhi = fabs(otherjet->p.DeltaPhi(myjet->p));
+    backtobackjet = otherjet;
+  }
+  
+
+  if(backtobackjet!=0){
+    myjet->Set("BackToBackJetRpT",        backtobackjet-> Float("RpT_RootCoreJVT"));
+    myjet->Set("BackToBackJetDPhi", fabs( backtobackjet-> p.DeltaPhi(myjet->p)));
+    myjet->Set("BackToBackJetPt"  ,       backtobackjet-> p.Pt());
+  }
+  fTBackToBackRpT  = myjet->Float("BackToBackJetRpT");
+  fTBackToBackPt   = myjet->Float("BackToBackJetPt");
+  fTBackToBackDPhi = myjet->Float("BackToBackJetDPhi");
+
 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::FillEventVars End" << endl;
   return;
