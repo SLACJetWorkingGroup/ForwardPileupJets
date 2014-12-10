@@ -107,7 +107,9 @@ bool Analysis_ForwardPileupJets::ProcessEvent()
   MakeJetPlots(JetKey4LC,JetKey4Tru,JetKey4IT);
  
   // Calculate Nsubjettiness 
+  if(fDoTowers){
   AddNsub("calotowersGhost", "AntiKt4LCTopoGood", true, 1);
+  }
   
   // Calculate Tower Moments
   CalculateTowerJetMoments("AntiKt4LCTopoGood");

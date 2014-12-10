@@ -43,6 +43,8 @@ class Analysis_PUJetsTreeFiller : public Analysis_JetMET_Base {
   virtual void    WorkerTerminate();
 
   bool fDoTiming;
+  bool fSaveClusters;
+  bool fDoTowers;
 
   TTree *fEventTree;
   void AddBranches(TTree *tree);
@@ -60,6 +62,7 @@ class Analysis_PUJetsTreeFiller : public Analysis_JetMET_Base {
   int   fTNPVtruth;
   int   fTNPV;
   float fTZvtx;
+  int   fTNTruthJetsPt20Eta2p4;
 
   // jets ----------------
   int   fTJetIndex;
@@ -132,6 +135,7 @@ class Analysis_PUJetsTreeFiller : public Analysis_JetMET_Base {
 
     float fTEMfrac;
     float fTBackToBackRpT;
+    float fTBackToBackJVT;
     float fTBackToBackDPhi;
     float fTBackToBackPt;
 

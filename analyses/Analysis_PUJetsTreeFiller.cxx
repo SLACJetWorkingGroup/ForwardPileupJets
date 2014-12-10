@@ -40,7 +40,12 @@
 
   Analysis_JetMET_Base::WorkerBegin();
 
-  ChainCfg()->Get("doTiming",     fDoTiming);
+  fDoTiming          = true;
+  fSaveClusters      = true;
+  fDoTowers          = false;
+  ChainCfg()->Get("doTiming",         fDoTiming);
+  ChainCfg()->Get("saveClusters",     fSaveClusters);
+  ChainCfg()->Get("DOTOWERS",           fDoTowers);
   
 
   // trees -------------------
@@ -165,6 +170,7 @@ void Analysis_PUJetsTreeFiller::AddBranches(TTree *tree){
     tree->Branch("NPVtruth" ,                 &fTNPVtruth,               "NPVtruth/I");
     tree->Branch("NPV" ,                      &fTNPV,                    "NPV/I");
     tree->Branch("Zvtx",                      &fTZvtx,                   "Zvtx/F");
+    tree->Branch("NTruthJetsPt20Eta2p4",      &fTNTruthJetsPt20Eta2p4,   "NTruthJetsPt20Eta2p4/I");
   
     // Jet vars --------------------------------------------------------------------------------------
     tree->Branch("JetIndex",                  &fTJetIndex,               "JetIndex/I");
@@ -199,6 +205,22 @@ void Analysis_PUJetsTreeFiller::AddBranches(TTree *tree){
     tree->Branch("ClusTime1",                 &fTClusTime1,              "ClusTime1/F");
     tree->Branch("ClusTime2",                 &fTClusTime2,              "ClusTime2/F");
     tree->Branch("ClusTimeAdj",               &fTClusTimeAdj,            "ClusTimeAdj/F");
+    tree->Branch("NCaloTowers",               &fTNCaloTowers,            "NCaloTowers/I");
+    tree->Branch("CaloTowersSumPt",           &fTCaloTowersSumPt,        "CaloTowersSumPt/F");
+    tree->Branch("CaloTowersWidth",           &fTCaloTowersWidth,        "CaloTowersWidth/F");
+    tree->Branch("CaloTowersWidthReCalc",     &fTCaloTowersWidthReCalc,  "CaloTowersWidthReCalc/F");
+    tree->Branch("TopoTowersWidth",           &fTTopoTowersWidth,        "TopoTowersWidth/F");
+    tree->Branch("TopoTowersWidthReCalc",     &fTTopoTowersWidthReCalc,  "TopoTowersWidthReCalc/F");
+    tree->Branch("CaloTowerTau21",            &fTCaloTowerTau21,         "CaloTowerTau21/F");
+    tree->Branch("CaloTowerTau32",            &fTCaloTowerTau32,         "CaloTowerTau32/F");
+    tree->Branch("EMFrac",                    &fTEMfrac,                 "EMfrac/F");
+    tree->Branch("BackToBackRpT",             &fTBackToBackRpT,          "BackToBackRpT/F");
+    tree->Branch("BackToBackJVT",             &fTBackToBackJVT,          "BackToBackJVT/F");
+    tree->Branch("BackToBackDPhi",            &fTBackToBackDPhi,         "BackToBackDPhi/F");
+    tree->Branch("BackToBackPt",              &fTBackToBackPt,           "BackToBackPt/F");
+
+    // Clusters
+    if(fSaveClusters){
     tree->Branch("ClusPt",                    &fTClusPt,                 "ClusPt[NClus]/F");
     tree->Branch("ClusEta",                   &fTClusEta,                "ClusEta[NClus]/F");
     tree->Branch("ClusPhi",                   &fTClusPhi,                "ClusPhi[NClus]/F");
@@ -222,18 +244,7 @@ void Analysis_PUJetsTreeFiller::AddBranches(TTree *tree){
     tree->Branch("Is2LeadingClus",            &fTIs2LeadingClus,         "is2LeadingClus[NClus]/I");
     tree->Branch("Is3LeadingClus",            &fTIs3LeadingClus,         "is3LeadingClus[NClus]/I");
     tree->Branch("Is4LeadingClus",            &fTIs4LeadingClus,         "is4LeadingClus[NClus]/I");
-    tree->Branch("NCaloTowers",               &fTNCaloTowers,            "NCaloTowers/I");
-    tree->Branch("CaloTowersSumPt",           &fTCaloTowersSumPt,        "CaloTowersSumPt/F");
-    tree->Branch("CaloTowersWidth",           &fTCaloTowersWidth,        "CaloTowersWidth/F");
-    tree->Branch("CaloTowersWidthReCalc",     &fTCaloTowersWidthReCalc,  "CaloTowersWidthReCalc/F");
-    tree->Branch("TopoTowersWidth",           &fTTopoTowersWidth,        "TopoTowersWidth/F");
-    tree->Branch("TopoTowersWidthReCalc",     &fTTopoTowersWidthReCalc,  "TopoTowersWidthReCalc/F");
-    tree->Branch("CaloTowerTau21",            &fTCaloTowerTau21,         "CaloTowerTau21/F");
-    tree->Branch("CaloTowerTau32",            &fTCaloTowerTau32,         "CaloTowerTau32/F");
-    tree->Branch("EMFrac",                    &fTEMfrac,                 "EMfrac/F");
-    tree->Branch("BackToBackRpT",             &fTBackToBackRpT,          "BackToBackRpT/F");
-    tree->Branch("BackToBackDPhi",            &fTBackToBackDPhi,         "BackToBackDPhi/F");
-    tree->Branch("BackToBackPt",              &fTBackToBackPt,           "BackToBackPt/F");
+    }
 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::AddBranches End" << endl;
     return;
@@ -251,6 +262,7 @@ void Analysis_PUJetsTreeFiller::ResetBranches(TTree *tree){
     fTNPV                   = -999;
     fTMu                    = -999;
     fTZvtx                  = -999.99;
+    fTNTruthJetsPt20Eta2p4  = 0;
     
     //Jet Info
     fTJetIndex           = -999;
@@ -319,6 +331,7 @@ void Analysis_PUJetsTreeFiller::ResetBranches(TTree *tree){
     fTCaloTowerTau32 = -999;
 
     fTEMfrac = -999;
+    fTBackToBackJVT  = -999;
     fTBackToBackRpT  = -999;
     fTBackToBackDPhi = -999;
     fTBackToBackPt   = -999;
@@ -340,6 +353,12 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
     fTDefaultWeight               = DefaultWeight();
     fTMu                          = Float("averageIntPerXing");                  
     fTZvtx                        = vtx(0).x.z();
+   
+    for(int i=0; i<jets("AntiKt4Truth"); ++i){
+        if (jet(i,"AntiKt4Truth").p.Pt()<20        ) continue;
+        if (fabs(jet(i,"AntiKt4Truth").p.Eta())>2.4) continue;
+        fTNTruthJetsPt20Eta2p4++;
+    }
 
     // Jet Info ----------------------
     fTJPt         = myjet->p.Pt();
@@ -410,6 +429,7 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
     }
 
     // Tower Information
+    if(fDoTowers){
     fTNCaloTowers     = myjet->Int("NCaloTowers");
     fTCaloTowersSumPt = myjet->Float("CaloTowersSumPt");
     fTCaloTowersWidth = myjet->Float("CaloTowersWidth");
@@ -418,6 +438,7 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
     fTTopoTowersWidthReCalc = myjet->Float("TopoTowersWidthReCalc");
     fTCaloTowerTau21    = myjet->Float("calotowersGhosttau21Min");
     fTCaloTowerTau32    = myjet->Float("calotowersGhosttau32Min");
+    }
 
       for(int iC=0; iC<myjet->Objs("constituents"); ++iC){
         Particle *con = (Particle*) myjet->Obj("constituents",iC);
@@ -483,7 +504,8 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
   }
 
 
-  // RpT Information
+  // RpT/JVT Information
+  myjet->Set("BackToBackJetJVT" , -1.);
   myjet->Set("BackToBackJetRpT" , -1.);
   myjet->Set("BackToBackJetPt"  , -1.);
   myjet->Set("BackToBackJetDPhi", -1.);
@@ -502,11 +524,13 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
   
 
   if(backtobackjet!=0){
+    myjet->Set("BackToBackJetJVT",        backtobackjet-> Float("JVT_RootCoreJVT"));
     myjet->Set("BackToBackJetRpT",        backtobackjet-> Float("RpT_RootCoreJVT"));
     myjet->Set("BackToBackJetDPhi", fabs( backtobackjet-> p.DeltaPhi(myjet->p)));
     myjet->Set("BackToBackJetPt"  ,       backtobackjet-> p.Pt());
   }
   fTBackToBackRpT  = myjet->Float("BackToBackJetRpT");
+  fTBackToBackJVT  = myjet->Float("BackToBackJetJVT");
   fTBackToBackPt   = myjet->Float("BackToBackJetPt");
   fTBackToBackDPhi = myjet->Float("BackToBackJetDPhi");
 
