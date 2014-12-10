@@ -33,7 +33,6 @@ import sys    # exit
 import time   # time accounting
 import getopt # command line parser
 import ROOT
-
 # --------------------------------------------
 
 # Default settings for command line arguments
