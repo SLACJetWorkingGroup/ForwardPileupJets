@@ -96,13 +96,19 @@ bool Analysis_ForwardPileupJets::ProcessEvent()
   AnaKey JetKeyA(JetKey4LC.Data());
   Fill(JetKeyA+"_NPV", Int("NPV"), Weight(), 100, 0., 100.);
   Fill(JetKeyA+"_mu", Float("averageIntPerXing"), Weight(), 100, 0., 100.); 
+  if(vtxs()>0){
+    for (int iV=1;iV<vtxs();++iV){
+      Fill(JetKeyA+"_dZ_PU", TMath::Abs(vtx(iV).x.z() - vtx(0).x.z()), Weight(), 100, 0., 400.);
+    }
+  }
   MakeJetPlots(JetKey4LC,JetKey4Tru,JetKey4IT);
  
-  // Calculate Nsubjettiness 
+  // Calculate Nsubjettiness
+  if(fDoTowers){ 
   AddNsub("calotowersGhost", "AntiKt4LCTopoGood", true, 1);
   
   CalculateTowerJetMoments("AntiKt4LCTopoGood");
- 
+  }
   return true;
 }
 

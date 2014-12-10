@@ -37,7 +37,8 @@ class Analysis_PUJetsTreeFiller : public Analysis_JetMET_Base {
   ClassDef(Analysis_PUJetsTreeFiller, 0);
   
   Bool_t  fDetail;
-  
+  Bool_t  fDoTowers;
+ 
   virtual bool    ProcessEvent();
   virtual void    WorkerBegin(); 
   virtual void    WorkerTerminate();
@@ -59,6 +60,7 @@ class Analysis_PUJetsTreeFiller : public Analysis_JetMET_Base {
   int   fTNPVtruth;
   int   fTNPV;
   float fTZvtx;
+  float fTdZ;
 
   // jets ----------------
   int   fTJetIndex;

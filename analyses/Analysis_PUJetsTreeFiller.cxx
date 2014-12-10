@@ -39,7 +39,7 @@
   if (Debug()) cout << "Analysis_PUJetsTreeFiller: DEBUG In WorkerBegin() " << endl;
 
   Analysis_JetMET_Base::WorkerBegin();
-
+  fDoTowers          = false;
 
   // trees -------------------
   fEventTree = new TTree("EventTree", "Tree with event-by-event variables");
@@ -162,6 +162,7 @@ void Analysis_PUJetsTreeFiller::AddBranches(TTree *tree){
     tree->Branch("NPVtruth" ,                 &fTNPVtruth,               "NPVtruth/I");
     tree->Branch("NPV" ,                      &fTNPV,                    "NPV/I");
     tree->Branch("Zvtx",                      &fTZvtx,                   "Zvtx/F");
+    tree->Branch("dZ",                        &fTdZ,                     "dZ/F");
   
     // Jet vars --------------------------------------------------------------------------------------
     tree->Branch("JetIndex",                  &fTJetIndex,               "JetIndex/I");
@@ -219,12 +220,14 @@ void Analysis_PUJetsTreeFiller::AddBranches(TTree *tree){
     tree->Branch("Is2LeadingClus",            &fTIs2LeadingClus,         "is2LeadingClus[NClus]/I");
     tree->Branch("Is3LeadingClus",            &fTIs3LeadingClus,         "is3LeadingClus[NClus]/I");
     tree->Branch("Is4LeadingClus",            &fTIs4LeadingClus,         "is4LeadingClus[NClus]/I");
+    if(fDoTowers){
     tree->Branch("NCaloTowers",               &fTNCaloTowers,            "NCaloTowers/I");
     tree->Branch("CaloTowersSumPt",           &fTCaloTowersSumPt,        "CaloTowersSumPt/F");
     tree->Branch("CaloTowersWidth",           &fTCaloTowersWidth,        "CaloTowersWidth/F");
     tree->Branch("CaloTowersWidthReCalc",     &fTCaloTowersWidthReCalc,  "CaloTowersWidthReCalc/F");
     tree->Branch("TopoTowersWidth",           &fTTopoTowersWidth,        "TopoTowersWidth/F");
     tree->Branch("TopoTowersWidthReCalc",     &fTTopoTowersWidthReCalc,  "TopoTowersWidthReCalc/F");
+    }
 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::AddBranches End" << endl;
     return;
@@ -242,6 +245,7 @@ void Analysis_PUJetsTreeFiller::ResetBranches(TTree *tree){
     fTNPV                   = -999;
     fTMu                    = -999;
     fTZvtx                  = -999.99;
+    fTdZ                    = -999.99;
     
     //Jet Info
     fTJetIndex           = -999;
@@ -300,12 +304,14 @@ void Analysis_PUJetsTreeFiller::ResetBranches(TTree *tree){
         fTIs3LeadingClus[iC] = -999;
         fTIs4LeadingClus[iC] = -999;
     }
+    if(fDoTowers){
     fTNCaloTowers     = 0;
     fTCaloTowersSumPt = -999;
     fTCaloTowersWidth = -999;
     fTCaloTowersWidthReCalc = -999;
     fTTopoTowersWidth = -999;
     fTTopoTowersWidthReCalc = -999;
+    }
 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::ResetBranches End" << endl;
     return;
@@ -324,6 +330,20 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
     fTDefaultWeight               = DefaultWeight();
     fTMu                          = Float("averageIntPerXing");                  
     fTZvtx                        = vtx(0).x.z();
+
+    float absdZ;
+    int closeIndex;
+    absdZ = 999.99;
+    closeIndex = 0;
+    if(vtxs()>0){
+      for(int iV=1;iV<vtxs(); ++iV){
+        if(TMath::Abs(vtx(0).x.z()-vtx(iV).x.z())<absdZ){
+          absdZ = TMath::Abs(vtx(0).x.z()-vtx(iV).x.z());
+          closeIndex = iV;
+        }
+      }
+      fTdZ = vtx(0).x.z()-vtx(closeIndex).x.z();
+    }
 
     // Jet Info ----------------------
     fTJPt         = myjet->p.Pt();
@@ -393,12 +413,14 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
     }
 
     // Tower Information
+    if(fDoTowers){
     fTNCaloTowers     = myjet->Int("NCaloTowers");
     fTCaloTowersSumPt = myjet->Float("CaloTowersSumPt");
     fTCaloTowersWidth = myjet->Float("CaloTowersWidth");
     fTCaloTowersWidthReCalc = myjet->Float("CaloTowersWidthReCalc");
     fTTopoTowersWidth = myjet->Float("TopoTowersWidth");
     fTTopoTowersWidthReCalc = myjet->Float("TopoTowersWidthReCalc");
+    } 
 
       for(int iC=0; iC<myjet->Objs("constituents"); ++iC){
         Particle *con = (Particle*) myjet->Obj("constituents",iC);
@@ -455,9 +477,35 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
   fTClusTime1 = fTClusTime[LeadClusIndex];
   fTClusTime2 = fTClusTime[Lead2ClusIndex];
 
-  TFile f("~/nfs/ProofAna20140926/ForwardPileupJets/analyses/TimeCorrection.root");
-  TH2D *TimeMap = (TH2D*)f.Get("TimeMap");
-  fTClusTimeAdj = fTClusTime[LeadClusIndex]-TimeMap->GetBinContent(TimeMap->FindBin(fTZvtx,fTJEta));
+  //TFile f("~/nfs/ProofAna20140926/ForwardPileupJets/analyses/TimeCorrection.root");
+  //TH2D *TimeMap = (TH2D*)f.Get("TimeMap");
+  //fTClusTimeAdj = fTClusTime[LeadClusIndex]-TimeMap->GetBinContent(TimeMap->FindBin(fTZvtx,fTJEta));
+
+  float tCorr, x, y, r, t;
+  x = 2.19; //length of barrel from z=0
+  y = 1.15; //radius of barrel
+  tCorr = -999.99;
+  t     = -999.99;
+  r     = -999.99;
+
+  if(fTJEta>-1.4&&fTJEta<0){
+    r = TMath::Sqrt(TMath::Power((y/TMath::Tan(TMath::Pi()-2*TMath::ATan(TMath::Exp(-fTJEta))) + fTZvtx/1000.0),2) + TMath::Power(y,2));
+    tCorr = (10/3)*y/TMath::Sin(TMath::Pi()-2*TMath::ATan(TMath::Exp(-fTJEta))); //t=0 for z=0
+  }
+  if(fTJEta<1.4&&fTJEta>0){
+    r = TMath::Sqrt(TMath::Power((y/TMath::Tan(2*TMath::ATan(TMath::Exp(-fTJEta))) - fTZvtx/1000.0),2) + TMath::Power(y,2));
+    tCorr = (10/3)*y/TMath::Sin(2*TMath::ATan(TMath::Exp(-fTJEta)));
+  }
+  if(fTJEta<-1.4){
+    r = TMath::Sqrt(TMath::Power((x*TMath::Tan(TMath::Pi()-2*TMath::ATan(TMath::Exp(-fTJEta)))),2) + TMath::Power((x+fTZvtx/1000.0),2));
+    tCorr = (10/3)*x/TMath::Cos(TMath::Pi()-2*TMath::ATan(TMath::Exp(-fTJEta)));
+  }
+  if(fTJEta>1.4){
+    r = TMath::Sqrt(TMath::Power((x*TMath::Tan(2*TMath::ATan(TMath::Exp(-fTJEta)))),2) + TMath::Power((x-fTZvtx/1000.0),2));
+    tCorr = (10/3)*x/TMath::Cos(2*TMath::ATan(TMath::Exp(-fTJEta)));
+  }
+  t = (10/3)*r - tCorr;
+  fTClusTimeAdj = fTClusTime[LeadClusIndex]-t;
 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::FillEventVars End" << endl;
   return;
