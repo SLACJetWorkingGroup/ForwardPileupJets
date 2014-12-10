@@ -21,6 +21,7 @@
 #include "TKey.h"
 #include "TObjString.h"
 #include "TObjArray.h"
+#include "JetVertexTagger/JetVertexTagger.h"
 
 
 ///=========================================
@@ -37,6 +38,13 @@
   ChainCfg()->Get("doLeptonSelection",  fDoLeptonSelection);
   ChainCfg()->Get("doQCDSelection",     fDoQCDSelection);
   ChainCfg()->Get("DOTOWERS",           fDoTowers);
+  
+  // for JVT
+  std::string maindir(gSystem->Getenv("PROOFANADIR"));
+  if(maindir==".") maindir+="/libProofAna";
+  cout << maindir << " is the maindir we work from! " << endl;
+  cout << gSystem->Exec(TString("ls "+maindir).Data()) << endl;
+  jvt = new JetVertexTagger(0.2, maindir+"/utils/JetVertexTagger/data/JVTlikelihood_20140805.root");
 
 
   if (Debug()) cout << "Analysis_ForwardPileupJets: DEBUG Finish WorkerBegin()" << endl;  
@@ -103,12 +111,17 @@ bool Analysis_ForwardPileupJets::ProcessEvent()
   }
   MakeJetPlots(JetKey4LC,JetKey4Tru,JetKey4IT);
  
-  // Calculate Nsubjettiness
-  if(fDoTowers){ 
+  // Calculate Nsubjettiness 
+  if(fDoTowers){
   AddNsub("calotowersGhost", "AntiKt4LCTopoGood", true, 1);
   
+  // Calculate Tower Moments
   CalculateTowerJetMoments("AntiKt4LCTopoGood");
   }
+
+  // Calculate RpT, corrJVF, JVT
+  CalculateJVT("AntiKt4LCTopoGood");
+ 
   return true;
 }
 
@@ -124,6 +137,52 @@ void Analysis_ForwardPileupJets::CalculateTowerJetMoments(const MomKey JetKey){
       myjet->Set("TopoTowersWidthReCalc", GetConstitPtWeightedMeanOverDr(myjet, "topotowersGhost", true));
   }
 
+}
+
+void Analysis_ForwardPileupJets::CalculateJVT(const MomKey JetKey){
+  for(int iJet = 0; iJet < jets(JetKey); iJet++){   
+      Particle *myjet = &(jet(iJet, JetKey));
+
+        vector<float> trk_pt, trk_z0_wrtPV;
+        for(int it=0; it< tracks(); ++it){
+          trk_pt                    .push_back(track(it).p.Pt());
+          trk_z0_wrtPV              .push_back(track(it).Float("z0_wrtPV"));
+          track(it).Set("JVTindex", it);
+        }
+
+        // trk to vtx assoc
+        vector<vector<int> > vxp_trk_index;
+        for(int iv=0; iv<vtxs(); ++iv){
+          vector<int> assoc_track_indices;
+          for(int it=0; it<vtx(iv).Objs("vtxTracks"); ++it){
+              Particle* trk = (Particle*) vtx(iv).Obj("vtxTracks",it);
+              assoc_track_indices.push_back(trk->Int("JVTindex"));
+          }
+          vxp_trk_index.push_back(assoc_track_indices);
+        }
+        
+        // track to jet association
+        vector<int> assoc_trk_indices;
+        for(int it=0; it<myjet->Int("nTrackAssoc"); ++it){
+            Particle* trk = (Particle*) myjet->Obj("GhostAssocTrack", it);
+            assoc_trk_indices.push_back(trk->Int("JVTindex"));
+        }
+
+        // JVT
+        jvt->init(trk_pt, trk_z0_wrtPV, vxp_trk_index);
+
+        bool pass = (*jvt)(myjet->p.Pt(), assoc_trk_indices); 
+
+        myjet->Set("corrJVF_RootCoreJVT", jvt->corrJVF());
+        myjet->Set("RpT_RootCoreJVT",     jvt->RpT());
+        myjet->Set("JVT_RootCoreJVT",     jvt->JVT());
+
+//        cout << " >>>>> JVT Rpt     " << jvt->RpT()                << endl;
+//        cout << " >>>>> JVT cJVF    " << jvt->corrJVF()            << endl;
+
+
+  }
+  
 }
 
 void Analysis_ForwardPileupJets::MakeJetPlots(const MomKey JetKey1, const MomKey JetKey2, const MomKey JetKey3){

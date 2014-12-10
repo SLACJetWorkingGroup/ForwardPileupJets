@@ -12,14 +12,14 @@
 
 void runForwardPU_Zmumu(TString mode       = "cluster",         // local, lite, or cluster
 TString identifier = "ForwardPileupJets",                      // tag 
-TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON.forwardnew",
 //TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON_notsoshort2.forwardnew",
+TString dataset = "Zmumu_PowhegPythia8_MC12_COMMON.forwardnew",
 //TString dataset = "data_muons_all_NTUP_COMMON.forwardnew",
 //TString dataset = "data_muons_all_NTUP_COMMON_notsoshort.forwardnew",
 TString username   = "mnks",                               // username (e.g. swiatlow, fizisist)
 bool mcweights     = true,                                 // use mc weights?
 bool debug         = false,                                // debug mode
-Long64_t nentries  = 5000                              // nevents
+Long64_t nentries  = 100                              // nevents
     ) 
 { 
     
@@ -102,6 +102,8 @@ Long64_t nentries  = 5000                              // nevents
     bool doMuSmear        = false;
     bool doLeptonSelection= true;
     bool doTowers         = false;
+    bool doTiming         = false;
+    bool saveClusters     = false;
     
     bool doCOMMON         = false;
     if(dataset.Contains("COMMON")){
@@ -188,6 +190,8 @@ Long64_t nentries  = 5000                              // nevents
     chain->Set("doLeptonSelection" , doLeptonSelection);
     chain->Set("DOSMWZ",           doSMWZ          );  
     chain->Set("DOTOWERS",          doTowers);  
+    chain->Set("doTiming",          doTiming);  
+    chain->Set("saveClusters",      saveClusters);
 
     chain->Write();
 

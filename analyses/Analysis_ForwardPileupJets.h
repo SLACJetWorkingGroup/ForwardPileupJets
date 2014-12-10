@@ -15,6 +15,7 @@
 #define Analysis_ForwardPileupJets_h
 
 #include "Analysis_ForwardPileupJets_Base.h"
+#include "JetVertexTagger/JetVertexTagger.h"
  
 using std::cout;
 using std::endl;
@@ -45,7 +46,10 @@ class Analysis_ForwardPileupJets : public Analysis_ForwardPileupJets_Base {
   virtual void    WorkerTerminate();
   
   
+  JetVertexTagger* jvt;
+
   void   CalculateTowerJetMoments(MomKey JetKey);
+  void   CalculateJVT(const MomKey JetKey);
   
   bool   EventSelection();
   bool   MakeJetMassCut(MomKey JetKey);

@@ -39,9 +39,17 @@
   if (Debug()) cout << "Analysis_PUJetsTreeFiller: DEBUG In WorkerBegin() " << endl;
 
   Analysis_JetMET_Base::WorkerBegin();
+
+  fDoTiming          = true;
+  fSaveClusters      = true;
   fDoTowers          = false;
+  ChainCfg()->Get("doTiming",         fDoTiming);
+  ChainCfg()->Get("saveClusters",     fSaveClusters);
+  ChainCfg()->Get("DOTOWERS",           fDoTowers);
+  
 
   // trees -------------------
+  OutputDir()->cd();
   fEventTree = new TTree("EventTree", "Tree with event-by-event variables");
   AddBranches(fEventTree);
 } 
@@ -163,6 +171,7 @@ void Analysis_PUJetsTreeFiller::AddBranches(TTree *tree){
     tree->Branch("NPV" ,                      &fTNPV,                    "NPV/I");
     tree->Branch("Zvtx",                      &fTZvtx,                   "Zvtx/F");
     tree->Branch("dZ",                        &fTdZ,                     "dZ/F");
+    tree->Branch("NTruthJetsPt20Eta2p4",      &fTNTruthJetsPt20Eta2p4,   "NTruthJetsPt20Eta2p4/I");
   
     // Jet vars --------------------------------------------------------------------------------------
     tree->Branch("JetIndex",                  &fTJetIndex,               "JetIndex/I");
@@ -197,6 +206,22 @@ void Analysis_PUJetsTreeFiller::AddBranches(TTree *tree){
     tree->Branch("ClusTime1",                 &fTClusTime1,              "ClusTime1/F");
     tree->Branch("ClusTime2",                 &fTClusTime2,              "ClusTime2/F");
     tree->Branch("ClusTimeAdj",               &fTClusTimeAdj,            "ClusTimeAdj/F");
+    tree->Branch("NCaloTowers",               &fTNCaloTowers,            "NCaloTowers/I");
+    tree->Branch("CaloTowersSumPt",           &fTCaloTowersSumPt,        "CaloTowersSumPt/F");
+    tree->Branch("CaloTowersWidth",           &fTCaloTowersWidth,        "CaloTowersWidth/F");
+    tree->Branch("CaloTowersWidthReCalc",     &fTCaloTowersWidthReCalc,  "CaloTowersWidthReCalc/F");
+    tree->Branch("TopoTowersWidth",           &fTTopoTowersWidth,        "TopoTowersWidth/F");
+    tree->Branch("TopoTowersWidthReCalc",     &fTTopoTowersWidthReCalc,  "TopoTowersWidthReCalc/F");
+    tree->Branch("CaloTowerTau21",            &fTCaloTowerTau21,         "CaloTowerTau21/F");
+    tree->Branch("CaloTowerTau32",            &fTCaloTowerTau32,         "CaloTowerTau32/F");
+    tree->Branch("EMFrac",                    &fTEMfrac,                 "EMfrac/F");
+    tree->Branch("BackToBackRpT",             &fTBackToBackRpT,          "BackToBackRpT/F");
+    tree->Branch("BackToBackJVT",             &fTBackToBackJVT,          "BackToBackJVT/F");
+    tree->Branch("BackToBackDPhi",            &fTBackToBackDPhi,         "BackToBackDPhi/F");
+    tree->Branch("BackToBackPt",              &fTBackToBackPt,           "BackToBackPt/F");
+
+    // Clusters
+    if(fSaveClusters){
     tree->Branch("ClusPt",                    &fTClusPt,                 "ClusPt[NClus]/F");
     tree->Branch("ClusEta",                   &fTClusEta,                "ClusEta[NClus]/F");
     tree->Branch("ClusPhi",                   &fTClusPhi,                "ClusPhi[NClus]/F");
@@ -246,6 +271,7 @@ void Analysis_PUJetsTreeFiller::ResetBranches(TTree *tree){
     fTMu                    = -999;
     fTZvtx                  = -999.99;
     fTdZ                    = -999.99;
+    fTNTruthJetsPt20Eta2p4  = 0;
     
     //Jet Info
     fTJetIndex           = -999;
@@ -311,7 +337,15 @@ void Analysis_PUJetsTreeFiller::ResetBranches(TTree *tree){
     fTCaloTowersWidthReCalc = -999;
     fTTopoTowersWidth = -999;
     fTTopoTowersWidthReCalc = -999;
+    fTCaloTowerTau21 = -999;
+    fTCaloTowerTau32 = -999;
     }
+
+    fTEMfrac = -999;
+    fTBackToBackJVT  = -999;
+    fTBackToBackRpT  = -999;
+    fTBackToBackDPhi = -999;
+    fTBackToBackPt   = -999;
 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::ResetBranches End" << endl;
     return;
@@ -330,6 +364,12 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
     fTDefaultWeight               = DefaultWeight();
     fTMu                          = Float("averageIntPerXing");                  
     fTZvtx                        = vtx(0).x.z();
+   
+    for(int i=0; i<jets("AntiKt4Truth"); ++i){
+        if (jet(i,"AntiKt4Truth").p.Pt()<20        ) continue;
+        if (fabs(jet(i,"AntiKt4Truth").p.Eta())>2.4) continue;
+        fTNTruthJetsPt20Eta2p4++;
+    }
 
     float absdZ;
     int closeIndex;
@@ -370,6 +410,7 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
     }
     fTNumTowers     = myjet->Float("NumTowers");   
     fTTiming     = myjet->Float("Timing");
+    fTEMfrac = myjet->Float("emfrac");
 
     int LeadClusIndex = -999;
     int Lead2ClusIndex = -999;
@@ -420,7 +461,9 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
     fTCaloTowersWidthReCalc = myjet->Float("CaloTowersWidthReCalc");
     fTTopoTowersWidth = myjet->Float("TopoTowersWidth");
     fTTopoTowersWidthReCalc = myjet->Float("TopoTowersWidthReCalc");
-    } 
+    fTCaloTowerTau21    = myjet->Float("calotowersGhosttau21Min");
+    fTCaloTowerTau32    = myjet->Float("calotowersGhosttau32Min");
+    }
 
       for(int iC=0; iC<myjet->Objs("constituents"); ++iC){
         Particle *con = (Particle*) myjet->Obj("constituents",iC);
@@ -477,9 +520,12 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
   fTClusTime1 = fTClusTime[LeadClusIndex];
   fTClusTime2 = fTClusTime[Lead2ClusIndex];
 
+  if(fDoTiming){
   //TFile f("~/nfs/ProofAna20140926/ForwardPileupJets/analyses/TimeCorrection.root");
   //TH2D *TimeMap = (TH2D*)f.Get("TimeMap");
   //fTClusTimeAdj = fTClusTime[LeadClusIndex]-TimeMap->GetBinContent(TimeMap->FindBin(fTZvtx,fTJEta));
+  //f->Close();
+  //delete f;
 
   float tCorr, x, y, r, t;
   x = 2.19; //length of barrel from z=0
@@ -506,6 +552,39 @@ void Analysis_PUJetsTreeFiller::FillEventVars(TTree *tree, const MomKey JetKey, 
   }
   t = (10/3)*r - tCorr;
   fTClusTimeAdj = fTClusTime[LeadClusIndex]-t;
+  }
+
+
+  // RpT/JVT Information
+  myjet->Set("BackToBackJetJVT" , -1.);
+  myjet->Set("BackToBackJetRpT" , -1.);
+  myjet->Set("BackToBackJetPt"  , -1.);
+  myjet->Set("BackToBackJetDPhi", -1.);
+  float maxdPhi = 0;
+  Particle* backtobackjet =0;
+  for(int iJ=0; iJ<jets(JetKey); ++iJ){
+    Particle *otherjet = &(jet(iJ, JetKey)); 
+    if(myjet == otherjet)                            continue;
+    if(fabs(otherjet -> p.Eta())>2.4)                continue; // only looking at jets within the tracker
+    if(otherjet -> p.Pt()<20)                        continue; // only looking at jets with pT > 30 GeV
+    if(fabs(otherjet->p.DeltaPhi(myjet->p))<maxdPhi) continue; // keep track of jet that is most back to back
+
+    maxdPhi = fabs(otherjet->p.DeltaPhi(myjet->p));
+    backtobackjet = otherjet;
+  }
+  
+
+  if(backtobackjet!=0){
+    myjet->Set("BackToBackJetJVT",        backtobackjet-> Float("JVT_RootCoreJVT"));
+    myjet->Set("BackToBackJetRpT",        backtobackjet-> Float("RpT_RootCoreJVT"));
+    myjet->Set("BackToBackJetDPhi", fabs( backtobackjet-> p.DeltaPhi(myjet->p)));
+    myjet->Set("BackToBackJetPt"  ,       backtobackjet-> p.Pt());
+  }
+  fTBackToBackRpT  = myjet->Float("BackToBackJetRpT");
+  fTBackToBackJVT  = myjet->Float("BackToBackJetJVT");
+  fTBackToBackPt   = myjet->Float("BackToBackJetPt");
+  fTBackToBackDPhi = myjet->Float("BackToBackJetDPhi");
+
 
   if(Debug()) cout <<"Analysis_PUJetsTreeFiller::FillEventVars End" << endl;
   return;

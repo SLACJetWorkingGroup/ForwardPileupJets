@@ -17,7 +17,7 @@ TString dataset = "Pythia8_mc12_8TeV_JZ2W_NTUP_COMMON_TowersV4.forwardnew",
 TString username   = "pnef",                               // username (e.g. swiatlow, fizisist)
 bool mcweights     = true,                                 // use mc weights?
 bool debug         = false,                                // debug mode
-Long64_t nentries  = 500                              // nevents
+Long64_t nentries  = 100                              // nevents
     ) 
 { 
     
@@ -101,6 +101,7 @@ Long64_t nentries  = 500                              // nevents
     bool doLeptonSelection= false;
     bool doQCDSelection   = true;
     bool doTowers         = true;
+    bool doTiming         = false;
     
     bool doCOMMON         = false;
     if(dataset.Contains("COMMON")){
@@ -182,6 +183,7 @@ Long64_t nentries  = 500                              // nevents
     chain->Set("doLeptonSelection" , doLeptonSelection);
     chain->Set("doQCDSelection"    , doLeptonSelection);
     chain->Set("DOTOWERS",          doTowers);  
+    chain->Set("doTiming",          doTiming);  
 
     chain->Write();
 
